@@ -33,7 +33,7 @@ from google import genai
 ARROW_FILE = "NR_WebDataset/data-00000-of-00001.arrow"  # input dataset
 OUTPUT_CSV = "results2.csv"                    # where results are saved
 MODEL = "gemini-2.5-flash-lite"                # Gemini model to use
-LIMIT = 5        # max argument pairs to process; set to None to use all 1284
+LIMIT = 10       # max argument pairs to process; set to None to use all 1284
 BATCH_SIZE = 5    # how many pairs to pack into a single API call (higher = fewer calls)
 DELAY_SECONDS = 10 # seconds to wait between API calls (Free Tier allows ~15 req/min)
 MAX_RETRIES = 1   # how many times to retry a failed API call before skipping the batch
@@ -82,7 +82,6 @@ def prompt_a(pairs: list[tuple[str, str]]) -> str:
         f"{_format_pairs(pairs)}\n\n"
         f"Respond with ONLY a JSON array of exactly {n} objects, one per pair, in order.\n"
         f"Each object must be either {{\"attack\": 0}} or {{\"attack\": 1}}.\n"
-        f"Use only the integers 0 or 1 (no decimals, no strings)."
     )
 
 
@@ -100,7 +99,7 @@ def prompt_b(pairs: list[tuple[str, str]]) -> str:
         f"{_format_pairs(pairs)}\n\n"
         f"Respond with ONLY a JSON array of exactly {n} objects, one per pair, in order.\n"
         f"Each object must follow this schema: {{\"attack\": 0, \"support\": 0}}\n"
-        f"Use only the integers 0 or 1 (no decimals, no strings). Exactly one field per object must be 1."
+        f"Exactly one field per object must be 1."
     )
 
 
@@ -118,7 +117,7 @@ def prompt_c(pairs: list[tuple[str, str]]) -> str:
         f"{_format_pairs(pairs)}\n\n"
         f"Respond with ONLY a JSON array of exactly {n} objects, one per pair, in order.\n"
         f"Each object must follow this schema: {{\"attack\": 0, \"support\": 0, \"neither\": 0}}\n"
-        f"Use only the integers 0 or 1 (no decimals, no strings). Exactly one field per object must be 1."
+        f"Exactly one field per object must be 1."
     )
 
 
@@ -268,7 +267,7 @@ def main():
     log.info("============================")
 
     # Shuffle rows so any LIMIT slice is a random sample, not just the first N rows
-    df = df.sample(frac=1, random_state=42).reset_index(drop=True)
+    df = df.sample(frac=1).reset_index(drop=True)
     if LIMIT is not None:
         df = df.iloc[:LIMIT]
         log.info("Limited to %d pairs", LIMIT)
