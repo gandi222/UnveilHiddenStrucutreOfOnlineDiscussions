@@ -30,7 +30,7 @@ from google import genai
 # ---------------------------------------------------------------------------
 # Configuration — edit these as needed
 # ---------------------------------------------------------------------------
-ARROW_FILE = "data-00000-of-00001 (2).arrow"  # input dataset
+ARROW_FILE = "NR_WebDataset/data-00000-of-00001.arrow"  # input dataset
 OUTPUT_CSV = "results2.csv"                    # where results are saved
 MODEL = "gemini-2.5-flash-lite"                # Gemini model to use
 LIMIT = 5        # max argument pairs to process; set to None to use all 1284
@@ -69,37 +69,56 @@ def _format_pairs(pairs: list[tuple[str, str]]) -> str:
 
 
 def prompt_a(pairs: list[tuple[str, str]]) -> str:
-    # Strategy A: for each pair, only ask whether arg2 attacks arg1
+    # Strategy A: binary — only predicts whether arg2 attacks arg1.
+    # Prompt design: explicit label definition reduces ambiguity; exact count {n} tells
+    # the model how many objects to output so it doesn't have to count pairs itself;
+    # both valid JSON objects are shown so the model doesn't pattern-match on a single example.
+    n = len(pairs)
     return (
-        f"For each of the following argument pairs, does Arg2 attack Arg1?\n\n"
+        f"In this task, you will be given two arguments and your goal is to classify "
+        f"whether Arg2 attacks Arg1 based on the definition below.\n"
+        f"'Attack': Arg2 contradicts or opposes Arg1.\n\n"
+        f"For each pair, output 1 if Arg2 attacks Arg1, or 0 if it does not.\n\n"
         f"{_format_pairs(pairs)}\n\n"
-        f"Respond with ONLY a JSON array with one object per pair, in order.\n"
-        f"Use only the integers 0 or 1 (no decimals, no strings).\n"
-        f'[{{"attack": 1}}, {{"attack": 0}}, ...]'
+        f"Respond with ONLY a JSON array of exactly {n} objects, one per pair, in order.\n"
+        f"Each object must be either {{\"attack\": 0}} or {{\"attack\": 1}}.\n"
+        f"Use only the integers 0 or 1 (no decimals, no strings)."
     )
 
 
 def prompt_b(pairs: list[tuple[str, str]]) -> str:
-    # Strategy B: for each pair, choose between attack or support (exactly one = 1)
+    # Strategy B: two-class — predicts attack or support.
+    # Schema shows all zeros as a key-structure template; the "exactly one must be 1"
+    # instruction tells the model what to fill in, avoiding confusion from a fixed example.
+    n = len(pairs)
     return (
-        f"Classify the relationship between Arg2 and Arg1 for each pair.\n"
-        f"Exactly one field per pair must be 1; the other must be 0.\n\n"
+        f"In this task, you will be given two arguments and your goal is to classify "
+        f"the relation between them as either \"Support\" or \"Attack\" based on the definitions below.\n"
+        f"'Support': Arg2 is in favour of or agrees with Arg1.\n"
+        f"'Attack': Arg2 contradicts or opposes Arg1.\n\n"
+        f"For each pair, set the matching field to 1 and the other to 0.\n\n"
         f"{_format_pairs(pairs)}\n\n"
-        f"Respond with ONLY a JSON array with one object per pair, in order.\n"
-        f"Use only the integers 0 or 1 (no decimals, no strings).\n"
-        f'[{{"attack": 1, "support": 0}}, {{"attack": 0, "support": 1}}, ...]'
+        f"Respond with ONLY a JSON array of exactly {n} objects, one per pair, in order.\n"
+        f"Each object must follow this schema: {{\"attack\": 0, \"support\": 0}}\n"
+        f"Use only the integers 0 or 1 (no decimals, no strings). Exactly one field per object must be 1."
     )
 
 
 def prompt_c(pairs: list[tuple[str, str]]) -> str:
-    # Strategy C: for each pair, choose between attack, support, or neither (exactly one = 1)
+    # Strategy C: three-class — predicts attack, support, or neither.
+    # Same schema/count design as B; adds "No Relation" class with its own definition.
+    n = len(pairs)
     return (
-        f"Classify the relationship between Arg2 and Arg1 for each pair.\n"
-        f"Exactly one field per pair must be 1; the others must be 0.\n\n"
+        f"In this task, you will be given two arguments and your goal is to classify "
+        f"the relation between them as either \"Support\", \"Attack\", or \"No Relation\" based on the definitions below.\n"
+        f"'Support': Arg2 is in favour of or agrees with Arg1.\n"
+        f"'Attack': Arg2 contradicts or opposes Arg1.\n"
+        f"'No Relation': Arg2 has no meaningful relation to Arg1.\n\n"
+        f"For each pair, set the matching field to 1 and all others to 0.\n\n"
         f"{_format_pairs(pairs)}\n\n"
-        f"Respond with ONLY a JSON array with one object per pair, in order.\n"
-        f"Use only the integers 0 or 1 (no decimals, no strings).\n"
-        f'[{{"attack": 1, "support": 0, "neither": 0}}, {{"attack": 0, "support": 0, "neither": 1}}, ...]'
+        f"Respond with ONLY a JSON array of exactly {n} objects, one per pair, in order.\n"
+        f"Each object must follow this schema: {{\"attack\": 0, \"support\": 0, \"neither\": 0}}\n"
+        f"Use only the integers 0 or 1 (no decimals, no strings). Exactly one field per object must be 1."
     )
 
 
@@ -155,28 +174,35 @@ def run_evaluation(df: pd.DataFrame, strategy: str, client: genai.Client) -> lis
     total = len(df)
     rows = list(df.itertuples(index=False))  # convert to list for easy slicing
 
-    log.info("Starting strategy %s (%d pairs, batch size %d)", strategy, total, BATCH_SIZE)
+    log.info("=" * 60)
+    log.info("STRATEGY %s  |  %d pairs  |  batch size %d", strategy, total, BATCH_SIZE)
+    log.info("=" * 60)
 
     # Step through the dataset in chunks of BATCH_SIZE
     for batch_start in range(0, total, BATCH_SIZE):
         batch_rows = rows[batch_start: batch_start + BATCH_SIZE]
+        batch_end = batch_start + len(batch_rows)
         pairs = [(r.arg1, r.arg2) for r in batch_rows]
 
         # Build one prompt that contains all pairs in this batch
         prompt = prompt_fn(pairs)
-        log.info("--- Prompt (batch %d-%d) ---\n%s\n---", batch_start + 1, batch_start + len(batch_rows), prompt)
+
+        log.info("-" * 60)
+        log.info("BATCH %d–%d  (strategy %s)", batch_start + 1, batch_end, strategy)
+        log.info("-" * 60)
+        log.info("[PROMPT]\n%s", prompt)
+
         parsed_batch = None  # will hold the list of label dicts if the call succeeds
 
         try:
             raw = _call_api(client, prompt)
+            log.info("[LLM RESPONSE]\n%s", raw)
             # Parse the JSON array; must have exactly one entry per pair
             parsed_batch = _parse_json_array(raw, len(batch_rows))
+            log.info("[PARSED]  %s", parsed_batch)
         except Exception as exc:
             # If the batch call fails, all rows in it will have None labels
-            log.warning(
-                "Batch %d-%d strategy %s failed: %s",
-                batch_start + 1, batch_start + len(batch_rows), strategy, exc,
-            )
+            log.warning("[FAILED]  Batch %d–%d strategy %s: %s", batch_start + 1, batch_end, strategy, exc)
 
         # Map each parsed result back to its original row
         for i, row in enumerate(batch_rows):
@@ -186,6 +212,7 @@ def run_evaluation(df: pd.DataFrame, strategy: str, client: genai.Client) -> lis
                 item = parsed_batch[i]  # the model's answer for this specific pair
                 for key in ("attack", "support", "neither"):
                     if key in item:
+                        # int(float(...)) handles model returning "1.0" (string) or 1.0 (float)
                         labels[f"pred_{key}"] = int(float(item[key]))
 
             results.append({
@@ -198,10 +225,7 @@ def run_evaluation(df: pd.DataFrame, strategy: str, client: genai.Client) -> lis
                 "pred_neither": labels["pred_neither"],
             })
 
-        # Progress log at every 50 pairs and at the very end
-        done = min(batch_start + BATCH_SIZE, total)
-        if done % 50 == 0 or done == total:
-            log.info("  strategy %s: %d/%d done", strategy, done, total)
+        log.info("[PROGRESS]  strategy %s: %d/%d pairs done", strategy, batch_end, total)
 
         # Pause between batch calls to stay within the Free Tier rate limit
         time.sleep(DELAY_SECONDS)
@@ -214,6 +238,10 @@ def run_evaluation(df: pd.DataFrame, strategy: str, client: genai.Client) -> lis
 # ---------------------------------------------------------------------------
 
 def main():
+    # Delete stale output so a crash mid-run doesn't leave partial results from a previous run.
+    Path(OUTPUT_CSV).unlink(missing_ok=True)
+    log.info("Cleared %s (fresh run)", OUTPUT_CSV)
+
     # Read the API key from the environment (set with: export GEMINI_API_KEY="...")
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
@@ -262,6 +290,13 @@ def main():
     out_df = pd.DataFrame(all_results, columns=[
         "arg1", "arg2", "support", "strategy", "pred_attack", "pred_support", "pred_neither"
     ])
+
+    # Cast numeric columns to integer types.
+    # pred_* columns use nullable Int64 so that failed-batch None values stay as <NA>
+    # instead of forcing the whole column to float64 (which would show 1 as 1.0).
+    out_df["support"] = out_df["support"].astype(int)
+    for col in ("pred_attack", "pred_support", "pred_neither"):
+        out_df[col] = out_df[col].astype("Int64")
 
     # Add a human-readable version of the ground-truth label next to the numeric column
     support_map = {0: "Attack", 1: "Support", 2: "No Relation"}
