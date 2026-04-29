@@ -38,14 +38,15 @@ BATCH_SIZE = 5    # how many pairs to pack into a single API call (higher = fewe
 DELAY_SECONDS = 10 # seconds to wait between API calls (Free Tier allows ~15 req/min)
 MAX_RETRIES = 1   # how many times to retry a failed API call before skipping the batch
 
-# Which prompt strategy to run:
+# Which prompt strategies to run — add or remove entries to enable/disable each one:
 #   "A" — binary:      only predicts attack            (pred_attack)
 #   "B" — two-class:   predicts attack or support      (pred_attack, pred_support)
 #   "C" — three-class: predicts attack, support, neither (pred_attack, pred_support, pred_neither)
 #   "D" — still needs to be implemented for QBAF
+# Each enabled strategy runs independently; the output contains one row per pair per strategy.
 # Ground-truth label meaning in the dataset (column "support"):
 #   0 = Attack  |  1 = Support  |  2 = No Relation
-STRATEGY = "C"
+STRATEGIES_TO_RUN = ["A", "B", "C"]  # e.g. ["A"] or ["B", "C"] or ["A", "B", "C"]
 # ---------------------------------------------------------------------------
 
 # Set up logging so progress and warnings are printed to the terminal with timestamps
@@ -72,8 +73,9 @@ def prompt_a(pairs: list[tuple[str, str]]) -> str:
     return (
         f"For each of the following argument pairs, does Arg2 attack Arg1?\n\n"
         f"{_format_pairs(pairs)}\n\n"
-        f"Respond with ONLY a JSON array with one object per pair, in order:\n"
-        f'[{{"attack": 0 or 1}}, ...]'
+        f"Respond with ONLY a JSON array with one object per pair, in order.\n"
+        f"Use only the integers 0 or 1 (no decimals, no strings).\n"
+        f'[{{"attack": 1}}, {{"attack": 0}}, ...]'
     )
 
 
@@ -81,10 +83,11 @@ def prompt_b(pairs: list[tuple[str, str]]) -> str:
     # Strategy B: for each pair, choose between attack or support (exactly one = 1)
     return (
         f"Classify the relationship between Arg2 and Arg1 for each pair.\n"
-        f"Exactly one field per pair should be 1 (attack or support).\n\n"
+        f"Exactly one field per pair must be 1; the other must be 0.\n\n"
         f"{_format_pairs(pairs)}\n\n"
-        f"Respond with ONLY a JSON array with one object per pair, in order:\n"
-        f'[{{"attack": 0 or 1, "support": 0 or 1}}, ...]'
+        f"Respond with ONLY a JSON array with one object per pair, in order.\n"
+        f"Use only the integers 0 or 1 (no decimals, no strings).\n"
+        f'[{{"attack": 1, "support": 0}}, {{"attack": 0, "support": 1}}, ...]'
     )
 
 
@@ -92,10 +95,11 @@ def prompt_c(pairs: list[tuple[str, str]]) -> str:
     # Strategy C: for each pair, choose between attack, support, or neither (exactly one = 1)
     return (
         f"Classify the relationship between Arg2 and Arg1 for each pair.\n"
-        f"Exactly one field per pair should be 1 (attack, support, or neither).\n\n"
+        f"Exactly one field per pair must be 1; the others must be 0.\n\n"
         f"{_format_pairs(pairs)}\n\n"
-        f"Respond with ONLY a JSON array with one object per pair, in order:\n"
-        f'[{{"attack": 0 or 1, "support": 0 or 1, "neither": 0 or 1}}, ...]'
+        f"Respond with ONLY a JSON array with one object per pair, in order.\n"
+        f"Use only the integers 0 or 1 (no decimals, no strings).\n"
+        f'[{{"attack": 1, "support": 0, "neither": 0}}, {{"attack": 0, "support": 0, "neither": 1}}, ...]'
     )
 
 
@@ -160,6 +164,7 @@ def run_evaluation(df: pd.DataFrame, strategy: str, client: genai.Client) -> lis
 
         # Build one prompt that contains all pairs in this batch
         prompt = prompt_fn(pairs)
+        log.info("--- Prompt (batch %d-%d) ---\n%s\n---", batch_start + 1, batch_start + len(batch_rows), prompt)
         parsed_batch = None  # will hold the list of label dicts if the call succeeds
 
         try:
@@ -181,7 +186,7 @@ def run_evaluation(df: pd.DataFrame, strategy: str, client: genai.Client) -> lis
                 item = parsed_batch[i]  # the model's answer for this specific pair
                 for key in ("attack", "support", "neither"):
                     if key in item:
-                        labels[f"pred_{key}"] = int(item[key])
+                        labels[f"pred_{key}"] = int(float(item[key]))
 
             results.append({
                 "arg1": row.arg1,
@@ -244,12 +249,15 @@ def main():
 
     client = genai.Client(api_key=api_key)
 
-    # Validate the selected strategy
-    if STRATEGY not in STRATEGIES:
-        raise ValueError(f"STRATEGY must be one of {list(STRATEGIES.keys())}, got {STRATEGY!r}")
+    # Validate the selected strategies
+    invalid = [s for s in STRATEGIES_TO_RUN if s not in STRATEGIES]
+    if invalid:
+        raise ValueError(f"Invalid strategies: {invalid}. Must be one of {list(STRATEGIES.keys())}")
 
-    log.info("Running strategy %s", STRATEGY)
-    all_results = run_evaluation(df, STRATEGY, client)
+    all_results = []
+    for strategy in STRATEGIES_TO_RUN:
+        log.info("Running strategy %s", strategy)
+        all_results.extend(run_evaluation(df, strategy, client))
 
     out_df = pd.DataFrame(all_results, columns=[
         "arg1", "arg2", "support", "strategy", "pred_attack", "pred_support", "pred_neither"
