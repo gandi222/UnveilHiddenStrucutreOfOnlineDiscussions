@@ -25,6 +25,8 @@ import pandas as pd
 import pyarrow.ipc as ipc  # Arrow IPC stream format (used by HuggingFace datasets)
 from langchain_ollama import ChatOllama
 
+from evaluation import SUPPORT_MAP, add_correct_column, accuracy_summary
+
 # ---------------------------------------------------------------------------
 # Configuration — edit these as needed
 # ---------------------------------------------------------------------------
@@ -45,7 +47,7 @@ MAX_RETRIES = 1   # how many times to retry a failed API call before skipping th
 # Each enabled strategy runs independently; the output contains one row per pair per strategy.
 # Ground-truth label meaning in the dataset (column "support"):
 #   0 = Attack  |  1 = Support  |  2 = No Relation
-STRATEGIES_TO_RUN = ["A", "B", "C"]  # e.g. ["A"] or ["B", "C"] or ["A", "B", "C"]
+STRATEGIES_TO_RUN = ["A"]  # e.g. ["A"] or ["B", "C"] or ["A", "B", "C"]
 # ---------------------------------------------------------------------------
 
 # Set up logging so progress and warnings are printed to the terminal with timestamps
@@ -214,6 +216,7 @@ def run_evaluation(df: pd.DataFrame, strategy: str, client: ChatOllama) -> list[
                         labels[f"pred_{key}"] = int(float(item[key]))
 
             results.append({
+                "orig_idx": row.orig_idx,  # arrow file row index — ties support to its source row
                 "arg1": row.arg1,
                 "arg2": row.arg2,
                 "support": row.support,  # original ground-truth label from the dataset
@@ -251,6 +254,11 @@ def main():
     df = table.to_pandas()
     # "support" is the original column name from the dataset (1 = support, 0 = attack)
 
+    # Preserve the original row index from the arrow file before any shuffling.
+    # This is the ground-truth anchor: even after randomization the correct support
+    # value can be verified by looking up orig_idx in the source file.
+    df["orig_idx"] = df.index
+
     # Print a summary of the input file so the user can verify it loaded correctly
     log.info("=== Input file structure ===")
     log.info("Rows:    %d", len(df))
@@ -281,7 +289,8 @@ def main():
         all_results.extend(run_evaluation(df, strategy, client))
 
     out_df = pd.DataFrame(all_results, columns=[
-        "arg1", "arg2", "support", "strategy", "pred_attack", "pred_support", "pred_neither"
+        "orig_idx", "arg1", "arg2", "support", "strategy",
+        "pred_attack", "pred_support", "pred_neither",
     ])
 
     # Cast numeric columns to integer types.
@@ -292,15 +301,25 @@ def main():
         out_df[col] = out_df[col].astype("Int64")
 
     # Add a human-readable version of the ground-truth label next to the numeric column
-    support_map = {0: "Attack", 1: "Support", 2: "No Relation"}
     out_df.insert(
         out_df.columns.get_loc("support") + 1,
         "support_label",
-        out_df["support"].map(support_map),
+        out_df["support"].map(SUPPORT_MAP),
     )
+
+    add_correct_column(out_df)
+
+    out_df = out_df.rename(columns={"support": "support [true value]"})
 
     out_df.to_csv(OUTPUT_CSV, index=False)
     log.info("Results saved to %s (%d rows)", OUTPUT_CSV, len(out_df))
+
+    # Print per-strategy accuracy summary
+    log.info("=== Accuracy summary ===")
+    for strat, acc in accuracy_summary(out_df).items():
+        grp = out_df[out_df["strategy"] == strat]["correct"].dropna()
+        log.info("Strategy %s: %d/%d correct (%.1f%%)", strat, grp.sum(), len(grp), 100 * acc)
+    log.info("========================")
 
 
 if __name__ == "__main__":
