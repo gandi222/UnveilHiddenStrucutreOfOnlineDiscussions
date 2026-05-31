@@ -15,7 +15,7 @@ import pandas as pd
 SUPPORT_MAP = {0: "Attack", 1: "Support", 2: "No Relation"}
 
 
-def compute_correct(row) -> int | pd.NA:
+def compute_correct(row):
     """Return 1 if the model prediction matches the ground truth, 0 if not, NA if prediction is missing.
 
     Strategy A — binary (pred_attack only):
