@@ -1,6 +1,6 @@
 """
-LLM-based evaluation of argument relationships using the Gemini API.
-Batched version: multiple argument pairs are packed into one prompt to save API tokens.
+LLM-based evaluation of argument relationships using a locally-hosted Ollama model.
+Batched version: multiple argument pairs are packed into one prompt to save tokens.
 
 Instead of one API call per pair, BATCH_SIZE pairs are sent together.
 The model returns a JSON array with one result per pair in the same order.
@@ -11,31 +11,30 @@ Three prompt strategies are tested:
   C: Three-class — asks to choose between attack, support, or neither (each 0/1)
 
 Usage:
-  1. Set GEMINI_API_KEY as an environment variable
-  2. pip install -r requirements.txt
-  3. python evaluate2.py
+  1. pip install langchain-ollama
+  2. python evaluate2.py
 """
 
 import json
 import logging
-import os
 import re
 import time
 from pathlib import Path
 
 import pandas as pd
 import pyarrow.ipc as ipc  # Arrow IPC stream format (used by HuggingFace datasets)
-from google import genai
+from langchain_ollama import ChatOllama
 
 # ---------------------------------------------------------------------------
 # Configuration — edit these as needed
 # ---------------------------------------------------------------------------
 ARROW_FILE = "NR_WebDataset/data-00000-of-00001.arrow"  # input dataset
 OUTPUT_CSV = "results2.csv"                    # where results are saved
-MODEL = "gemini-2.5-flash-lite"                # Gemini model to use
+BASE_URL = "https://ollama-gpt-oss.cluster.ai.wu.ac.at/"  # WU Ollama server
+MODEL = "gemma4:latest"                        # model available on the Ollama server
 LIMIT = 10       # max argument pairs to process; set to None to use all 1284
 BATCH_SIZE = 5    # how many pairs to pack into a single API call (higher = fewer calls)
-DELAY_SECONDS = 10 # seconds to wait between API calls (Free Tier allows ~15 req/min)
+DELAY_SECONDS = 1  # seconds to wait between API calls
 MAX_RETRIES = 1   # how many times to retry a failed API call before skipping the batch
 
 # Which prompt strategies to run — add or remove entries to enable/disable each one:
@@ -133,13 +132,13 @@ STRATEGIES = {
 # API call with retry
 # ---------------------------------------------------------------------------
 
-def _call_api(client: genai.Client, prompt: str) -> str:
-    """Send a prompt to Gemini and return the raw response text.
+def _call_api(llm: ChatOllama, prompt: str) -> str:
+    """Send a prompt to the Ollama server and return the raw response text.
     Retries up to MAX_RETRIES times on any error, then raises."""
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            response = client.models.generate_content(model=MODEL, contents=prompt)
-            return response.text
+            response = llm.invoke(prompt)
+            return response.content
         except Exception as exc:
             log.warning("API call failed (attempt %d/%d): %s", attempt, MAX_RETRIES, exc)
             if attempt < MAX_RETRIES:
@@ -166,7 +165,7 @@ def _parse_json_array(text: str, expected: int) -> list[dict]:
 # Evaluation loop — one API call per batch of BATCH_SIZE pairs
 # ---------------------------------------------------------------------------
 
-def run_evaluation(df: pd.DataFrame, strategy: str, client: genai.Client) -> list[dict]:
+def run_evaluation(df: pd.DataFrame, strategy: str, client: ChatOllama) -> list[dict]:
     """Split the dataset into batches, call the API once per batch, and collect results."""
     prompt_fn = STRATEGIES[strategy]
     results = []
@@ -241,11 +240,6 @@ def main():
     Path(OUTPUT_CSV).unlink(missing_ok=True)
     log.info("Cleared %s (fresh run)", OUTPUT_CSV)
 
-    # Read the API key from the environment (set with: export GEMINI_API_KEY="...")
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        raise EnvironmentError("GEMINI_API_KEY not set. Export it in your terminal before running.")
-
     # Load the Arrow dataset (HuggingFace IPC stream format)
     arrow_path = Path(ARROW_FILE)
     if not arrow_path.exists():
@@ -274,7 +268,7 @@ def main():
 
     log.info("Loaded %d argument pairs from %s", len(df), arrow_path)
 
-    client = genai.Client(api_key=api_key)
+    client = ChatOllama(base_url=BASE_URL, model=MODEL, temperature=1.0)
 
     # Validate the selected strategies
     invalid = [s for s in STRATEGIES_TO_RUN if s not in STRATEGIES]
