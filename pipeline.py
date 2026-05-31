@@ -10,7 +10,6 @@ import pandas as pd
 import pyarrow.ipc as ipc
 from langchain_ollama import ChatOllama
 
-import config
 from api_client import call_api, parse_json_array
 from prompts import STRATEGIES
 
@@ -50,7 +49,14 @@ def save_results(out_df: pd.DataFrame, output_csv: str) -> None:
     log.info("Results saved to %s (%d rows)", output_csv, len(out_df))
 
 
-def run_evaluation(df: pd.DataFrame, strategy: str, client: ChatOllama) -> list:
+def run_evaluation(
+    df: pd.DataFrame,
+    strategy: str,
+    client: ChatOllama,
+    batch_size: int,
+    delay_seconds: float,
+    max_retries: int,
+) -> list:
     """Split the dataset into batches, call the API once per batch, and collect results."""
     prompt_fn = STRATEGIES[strategy]
     results = []
@@ -58,11 +64,11 @@ def run_evaluation(df: pd.DataFrame, strategy: str, client: ChatOllama) -> list:
     rows = list(df.itertuples(index=False))
 
     log.info("=" * 60)
-    log.info("STRATEGY %s  |  %d pairs  |  batch size %d", strategy, total, config.BATCH_SIZE)
+    log.info("STRATEGY %s  |  %d pairs  |  batch size %d", strategy, total, batch_size)
     log.info("=" * 60)
 
-    for batch_start in range(0, total, config.BATCH_SIZE):
-        batch_rows = rows[batch_start: batch_start + config.BATCH_SIZE]
+    for batch_start in range(0, total, batch_size):
+        batch_rows = rows[batch_start: batch_start + batch_size]
         batch_end = batch_start + len(batch_rows)
         pairs = [(r.arg1, r.arg2) for r in batch_rows]
 
@@ -76,7 +82,7 @@ def run_evaluation(df: pd.DataFrame, strategy: str, client: ChatOllama) -> list:
         parsed_batch = None
 
         try:
-            raw = call_api(client, prompt, config.MAX_RETRIES)
+            raw = call_api(client, prompt, max_retries)
             log.info("[LLM RESPONSE]\n%s", raw)
             parsed_batch = parse_json_array(raw, len(batch_rows))
             log.info("[PARSED]  %s", parsed_batch)
@@ -103,6 +109,6 @@ def run_evaluation(df: pd.DataFrame, strategy: str, client: ChatOllama) -> list:
             })
 
         log.info("[PROGRESS]  strategy %s: %d/%d pairs done", strategy, batch_end, total)
-        time.sleep(config.DELAY_SECONDS)
+        time.sleep(delay_seconds)
 
     return results
