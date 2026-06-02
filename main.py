@@ -15,13 +15,13 @@ ARROW_FILE = "NR_WebDataset/data-00000-of-00001.arrow"
 OUTPUT_CSV = "results2.csv"
 BASE_URL = "https://ollama-gpt-oss.cluster.ai.wu.ac.at/"
 MODEL = "gemma4:latest"
-LIMIT = 1000          # set to None to use all 4000 pairs
+LIMIT = 1010          # set to None to use all 4000 pairs
 BATCH_SIZE = 10
 DELAY_SECONDS = 0
 MAX_RETRIES = 1
 
 # "A" — binary, "B" — two-class, "C" — three-class, or all at once
-STRATEGIES_TO_RUN = ["C"]
+STRATEGIES_TO_RUN = ["B"]
 # ---------------------------------------------------------------------------
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
