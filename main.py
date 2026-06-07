@@ -21,12 +21,12 @@ DELAY_SECONDS = 0
 MAX_RETRIES = 1
 
 # "A" — binary, "B" — two-class, "C" — three-class, "D" — three-class + relevance score (zero-shot if dataset has no relevance column), or all at once
-STRATEGIES_TO_RUN = ["D"]
+STRATEGIES_TO_RUN = ["C"]
 
 # Number of labeled examples injected into each prompt as few-shot context.
 # 0 = no few-shot (zero-shot). Sampled once per strategy, balanced across classes.
 # For strategy B only Attack/Support examples are eligible (not No Relation).
-FEW_SHOT_N = 5
+FEW_SHOT_N = 0
 TRACK_RESULTS = 1   # set to 0 to skip writing ResultOverview_allTests.csv
 # ---------------------------------------------------------------------------
 

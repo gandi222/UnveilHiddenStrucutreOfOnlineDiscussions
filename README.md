@@ -140,6 +140,18 @@ Extends strategy C with a 5-level relevance rubric (0.00 / 0.25 / 0.50 / 0.75 / 
 
 If the dataset has no `relevance` column, strategy D falls back to zero-shot (no few-shot examples can be provided for the relevance field).
 
+#### Relevance Score Rubric 
+
+| Score | Label | Definition used in the prompt |
+|-------|-------|-------------------------------|
+| `0.00` | Irrelevant | Off-topic; no logical bearing on the parent argument. Includes insults, digressions, and purely emotional reactions. |
+| `0.25` | Weak | Loosely related to the parent but lacking substance. Vague restatements, unsupported assertions, or anecdotal remarks without reasoning. |
+| `0.50` | Moderate | On-topic and provides a reason or counter-reason, but the reasoning is generic, partial, or applicable to many arguments beyond the specific parent. |
+| `0.75` | Strong | Directly engages the parent argument with specific reasoning, evidence, or a well-formed counterexample. |
+| `1.00` | Decisive | Targets the core of the parent argument with substantive, specific reasoning that materially affects how the parent should be evaluated. |
+
+The model is instructed to pick exactly one of these five values; any other float is treated as a parse error.
+
 ---
 
 ## Output
@@ -165,7 +177,62 @@ If a batch API call fails after `MAX_RETRIES` attempts, all rows in that batch r
 
 ### ResultOverview_allTests.csv
 
-One row appended per strategy run (when `TRACK_RESULTS=1`). Columns include run metadata (timestamp, git commit, model, config), ground-truth and predicted class counts, per-class confusion matrix values (TP/FP/FN/TN), per-class precision/recall/F1, and macro F1.
+One row is appended per strategy run when `TRACK_RESULTS=1`. Each row is computed from the current `results2.csv` immediately after the run completes (via `evaluation.append_to_overview`).
+
+**Run metadata columns**
+
+| Column | Description |
+|--------|-------------|
+| `timestamp` | Wall-clock time when the row was written (`YYYY-MM-DD HH:MM:SS`) |
+| `git_commit` | Short SHA of the HEAD commit at run time |
+| `model` | Ollama model string (e.g. `gemma4:latest`) |
+| `strategy` | Strategy letter (`A`, `B`, `C`, or `D`) |
+| `few_shot_n` | Number of few-shot examples used (0 = zero-shot) |
+| `dataset_file` | Path to the Arrow input file |
+| `limit_config` | `LIMIT` setting from `main.py` (`None` = full dataset) |
+| `batch_size` | Pairs per API call |
+| `delay_seconds` | Pause between API calls |
+| `max_retries` | Retry attempts per failed batch |
+
+**Dataset structure columns**
+
+| Column | Description |
+|--------|-------------|
+| `n_evaluated` | Number of argument pairs evaluated in this run |
+| `ground_truth_count_attack` | Pairs with true label Attack (0) |
+| `ground_truth_count_support` | Pairs with true label Support (1) |
+| `ground_truth_count_no_relation` | Pairs with true label No Relation (2) |
+| `predicted_count_attack` | Pairs the model predicted as Attack |
+| `predicted_count_support` | Pairs the model predicted as Support |
+| `predicted_count_no_relation` | Pairs the model predicted as No Relation |
+
+**Metric columns**
+
+All metrics treat each class as the positive class in a one-vs-rest setup:
+
+| Column | Description |
+|--------|-------------|
+| `accuracy` | `correct / n_evaluated` (rows with `<NA>` predictions excluded from denominator) |
+| `true_positive_<class>` | Model predicted `<class>` and ground truth is `<class>` |
+| `false_positive_<class>` | Model predicted `<class>` but ground truth is not `<class>` |
+| `false_negative_<class>` | Ground truth is `<class>` but model predicted something else |
+| `true_negative_<class>` | Ground truth is not `<class>` and model did not predict `<class>` |
+| `precision_<class>` | `TP / (TP + FP)`; 0 when denominator is 0 |
+| `recall_<class>` | `TP / (TP + FN)`; 0 when denominator is 0 |
+| `f1_score_<class>` | `2 · precision · recall / (precision + recall)`; 0 when denominator is 0 |
+| `macro_f1` | Unweighted average of per-class F1 scores |
+
+`<class>` is one of `attack`, `support`, or `no_relation`. For strategy A, `no_relation` and `support` metrics are `NaN` (that class is not predicted).
+
+**How ResultOverview rows are calculated**
+
+After each strategy run, `evaluation.append_to_overview()` re-reads `results2.csv`, filters to rows for the current strategy, and computes all metrics from scratch:
+
+1. Each row is mapped to a `(y_true, y_pred)` label pair using the same correctness rules as the console output (strategy A: binary Attack/Not-Attack; B: Attack or Support with No Relation always wrong; C/D: three-class).
+2. Rows where any required prediction column is `<NA>` (failed batches) are excluded from F1 and accuracy denominators.
+3. Per-class TP/FP/FN/TN are counted over the `(y_true, y_pred)` pairs; precision, recall, and F1 are derived from those counts.
+4. Macro F1 is the simple unweighted mean of the three per-class F1 scores (two for strategy A).
+5. The resulting flat dict is appended as a new row; existing rows are never modified.
 
 ---
 

@@ -247,7 +247,7 @@ def print_strategy(strategy: str, df: pd.DataFrame):
     # ── accuracy ───────────────────────────────────────────────────────────
     n_correct, n_valid = accuracy_for_strategy(df)
     acc = n_correct / n_valid if n_valid else 0.0
-    print(f"\nAccuracy: {n_correct}/{n_valid} correct = {acc:.4f}  ({100*acc:.1f}%)"
+    print(f"\nAccuracy: {n_correct}/{n_valid} correct = {acc:.4f}  ({100*acc:.4f}%)"
           + (f"  [{len(df) - n_valid} rows skipped — missing predictions]"
              if len(df) - n_valid else ""))
 
@@ -398,7 +398,7 @@ def print_all_results(csv_path) -> None:
     for strategy in strategies:
         n_correct, n_valid = accuracy_for_strategy(df[df["strategy"] == strategy])
         acc = n_correct / n_valid if n_valid else 0.0
-        print(f"  Strategy {strategy}: {n_correct}/{n_valid} correct ({100*acc:.1f}%)")
+        print(f"  Strategy {strategy}: {n_correct}/{n_valid} correct ({100*acc:.4f}%)")
 
     print(f"\n{'='*60}\n  Done.\n{'='*60}\n")
 
