@@ -17,6 +17,9 @@ Strategy B — two-class: model predicts attack=0/1 and support=0/1.
 Strategy C — three-class: model predicts attack, support, neither.
   Correct when the matching flag == 1.
   Macro F1 over all 3 classes.
+
+Strategy D — three-class + relevance score: evaluated identically to C.
+  The relevance score (pred_relevance) is ignored for correctness / F1 purposes.
 """
 
 import sys
@@ -58,7 +61,7 @@ def compute_correct_row(row):
         else:
             return 0  # No Relation is never correct in B
 
-    elif strat == "C":
+    elif strat in ("C", "D"):
         if pd.isna(row["pred_attack"]) or pd.isna(row["pred_support"]) or pd.isna(row["pred_neither"]):
             return None
         if s == 0:
@@ -164,7 +167,7 @@ def print_section(title: str):
 def print_strategy(strategy: str, df: pd.DataFrame):
     print_section(f"Strategy {strategy}")
 
-    derive_fn = {"A": derive_labels_a, "B": derive_labels_b, "C": derive_labels_c}[strategy]
+    derive_fn = {"A": derive_labels_a, "B": derive_labels_b, "C": derive_labels_c, "D": derive_labels_c}[strategy]
     y_true, y_pred, classes, n_missing_preds = derive_fn(df)
 
     total = len(y_true)
@@ -259,7 +262,7 @@ def main():
     print(f"Loaded {len(df)} rows from {csv_path.name}")
     print(f"Strategies present: {sorted(df['strategy'].unique())}")
 
-    strategies = [s for s in sorted(df["strategy"].unique()) if s in ("A", "B", "C")]
+    strategies = [s for s in sorted(df["strategy"].unique()) if s in ("A", "B", "C", "D")]
     for strategy in strategies:
         print_strategy(strategy, df[df["strategy"] == strategy].copy())
 

@@ -18,8 +18,8 @@ BATCH_SIZE = 10
 DELAY_SECONDS = 0
 MAX_RETRIES = 1
 
-# "A" — binary, "B" — two-class, "C" — three-class, or all at once
-STRATEGIES_TO_RUN = ["C"]
+# "A" — binary, "B" — two-class, "C" — three-class, "D" — three-class + relevance score (zero-shot if dataset has no relevance column), or all at once
+STRATEGIES_TO_RUN = ["D"]
 
 # Number of labeled examples injected into each prompt as few-shot context.
 # 0 = no few-shot (zero-shot). Sampled once per strategy, balanced across classes.
@@ -47,8 +47,19 @@ def main():
         log.info("Running strategy %s", strategy)
 
         few_shot_df = sample_few_shot(full_df, strategy, FEW_SHOT_N)
-        few_shot = list(zip(few_shot_df["arg1"], few_shot_df["arg2"], few_shot_df["support"]))
         few_shot_indices = set(few_shot_df.index)
+
+        if strategy == "D":
+            if "relevance" in full_df.columns:
+                few_shot = list(zip(
+                    few_shot_df["arg1"], few_shot_df["arg2"],
+                    few_shot_df["support"], few_shot_df["relevance"],
+                ))
+            else:
+                print("no few shots possible, due to missing relevance score")
+                few_shot = []
+        else:
+            few_shot = list(zip(few_shot_df["arg1"], few_shot_df["arg2"], few_shot_df["support"]))
 
         eval_df = full_df[~full_df.index.isin(few_shot_indices)]
         if LIMIT is not None:

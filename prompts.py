@@ -4,6 +4,7 @@ Prompt builders for each classification strategy.
 Strategy A — binary:      only predicts attack            (pred_attack)
 Strategy B — two-class:   predicts attack or support      (pred_attack, pred_support)
 Strategy C — three-class: predicts attack, support, neither (pred_attack, pred_support, pred_neither)
+Strategy D — three-class + relevance score                (pred_attack, pred_support, pred_neither, pred_relevance)
 
 Each prompt function accepts an optional `few_shot` argument: a list of
 (arg1, arg2, support_int) tuples drawn from the dataset. When provided, labeled
@@ -34,6 +35,25 @@ def _answer_c(support: int) -> str:
     if support == 1:
         return '{"attack": 0, "support": 1, "neither": 0}'
     return '{"attack": 0, "support": 0, "neither": 1}'
+
+
+def _answer_d(support: int, relevance: float) -> str:
+    if support == 0:
+        return f'{{"attack": 1, "support": 0, "neither": 0, "relevance": {relevance}}}'
+    if support == 1:
+        return f'{{"attack": 0, "support": 1, "neither": 0, "relevance": {relevance}}}'
+    return f'{{"attack": 0, "support": 0, "neither": 1, "relevance": {relevance}}}'
+
+
+def _format_few_shot_d(examples: list) -> str:
+    """Format 4-tuple (arg1, arg2, support, relevance) examples for strategy D."""
+    lines = [f"Here are {len(examples)} labeled example(s) to guide your classification:\n"]
+    for i, (arg1, arg2, support, relevance) in enumerate(examples, start=1):
+        lines.append(
+            f"Example {i}:\nArg1: {arg1}\nArg2: {arg2}\nLabel: {_answer_d(support, relevance)}"
+        )
+    lines.append("Now classify the following pairs:\n")
+    return "\n\n".join(lines)
 
 
 def _format_few_shot(examples: list, answer_fn) -> str:
@@ -112,4 +132,33 @@ def prompt_c(pairs: list, few_shot: list = None) -> str:
     )
 
 
-STRATEGIES = {"A": prompt_a, "B": prompt_b, "C": prompt_c}
+def prompt_d(pairs: list, few_shot: list = None) -> str:
+    # Three-class + relevance score. Extends prompt C with the 5-level rubric
+    # from the paper so the model also rates how well Arg2 engages Arg1.
+    # few_shot must be 4-tuples (arg1, arg2, support, relevance) when provided.
+    n = len(pairs)
+    few_shot_block = (
+        f"\n{_format_few_shot_d(few_shot)}\n" if few_shot else "\n"
+    )
+    return (
+        f"In this task, you will be given two arguments and your goal is to classify "
+        f"the relation between them as either \"Support\", \"Attack\", or \"No Relation\" based on the definitions below.\n"
+        f"'Support': Arg2 is in favour of or agrees with Arg1.\n"
+        f"'Attack': Arg2 contradicts or opposes Arg1.\n"
+        f"'No Relation': Arg2 has no meaningful relation to Arg1.\n\n"
+        f"Also assign a relevance score to each Arg2 using this rubric:\n"
+        f"0.00 - Irrelevant: Off-topic; no logical bearing on the parent argument. Includes insults, digressions, and purely emotional reactions.\n"
+        f"0.25 - Weak: Loosely related to the parent but lacking substance. Vague restatements, unsupported assertions, or anecdotal remarks without reasoning.\n"
+        f"0.50 - Moderate: On-topic and provides a reason or counter-reason, but the reasoning is generic, partial, or applicable to many arguments beyond the specific parent.\n"
+        f"0.75 - Strong: Directly engages the parent argument with specific reasoning, evidence, or a well-formed counterexample.\n"
+        f"1.00 - Decisive: Targets the core of the parent argument with substantive, specific reasoning that materially affects how the parent should be evaluated.\n\n"
+        f"For each pair, set the matching relation field to 1 and all others to 0. Set \"relevance\" to one of: 0.00, 0.25, 0.50, 0.75, 1.00."
+        f"{few_shot_block}"
+        f"{_format_pairs(pairs)}\n\n"
+        f"Respond with ONLY a JSON array of exactly {n} objects, one per pair, in order.\n"
+        f"Each object must follow this schema: {{\"attack\": 0, \"support\": 0, \"neither\": 0, \"relevance\": 0.00}}\n"
+        f"Exactly one of attack/support/neither must be 1. \"relevance\" must be one of: 0.00, 0.25, 0.50, 0.75, 1.00."
+    )
+
+
+STRATEGIES = {"A": prompt_a, "B": prompt_b, "C": prompt_c, "D": prompt_d}

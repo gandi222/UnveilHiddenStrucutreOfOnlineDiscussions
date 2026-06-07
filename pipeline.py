@@ -123,12 +123,14 @@ def run_evaluation(
 
         batch_results = []
         for i, row in enumerate(batch_rows):
-            labels = {"pred_attack": None, "pred_support": None, "pred_neither": None}
+            labels = {"pred_attack": None, "pred_support": None, "pred_neither": None, "pred_relevance": None}
             if parsed_batch is not None:
                 item = parsed_batch[i]
                 for key in ("attack", "support", "neither"):
                     if key in item:
                         labels[f"pred_{key}"] = int(float(item[key]))
+                if strategy == "D" and "relevance" in item:
+                    labels["pred_relevance"] = float(item["relevance"])
 
             batch_results.append({
                 "orig_idx": row.orig_idx,
@@ -139,12 +141,14 @@ def run_evaluation(
                 "pred_attack": labels["pred_attack"],
                 "pred_support": labels["pred_support"],
                 "pred_neither": labels["pred_neither"],
+                "pred_relevance": labels["pred_relevance"],
             })
 
         batch_df = pd.DataFrame(batch_results)
         batch_df["support"] = batch_df["support"].astype(int)
         for col in ("pred_attack", "pred_support", "pred_neither"):
             batch_df[col] = batch_df[col].astype("Int64")
+        batch_df["pred_relevance"] = batch_df["pred_relevance"].astype("Float64")
         batch_df.insert(
             batch_df.columns.get_loc("support") + 1,
             "support_label",
