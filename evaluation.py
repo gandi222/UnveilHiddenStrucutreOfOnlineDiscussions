@@ -22,7 +22,9 @@ Strategy D — three-class + relevance score: evaluated identically to C.
   The relevance score (pred_relevance) is ignored for correctness / F1 purposes.
 """
 
+import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -250,14 +252,140 @@ def print_strategy(strategy: str, df: pd.DataFrame):
              if len(df) - n_valid else ""))
 
 
+# ── overview helpers ──────────────────────────────────────────────────────────
+
+_DERIVE_FNS = {"A": "derive_labels_a", "B": "derive_labels_b",
+               "C": "derive_labels_c", "D": "derive_labels_c"}
+
+
+def compute_metrics(df: pd.DataFrame, strategy: str) -> dict:
+    """Return a flat metrics dict for a single-strategy dataframe.
+
+    Keys: n_evaluated, n_correct, accuracy, macro_f1,
+          prec/rec/f1 for attack, support, no_relation (NaN when not applicable).
+    """
+    derive_fn = {"A": derive_labels_a, "B": derive_labels_b,
+                 "C": derive_labels_c, "D": derive_labels_c}[strategy]
+    y_true, y_pred, classes, _ = derive_fn(df)
+    per_class, macro_f1, _ = compute_f1(y_true, y_pred, classes)
+    n_correct, n_valid = accuracy_for_strategy(df)
+
+    result = {
+        "n_evaluated": len(df),
+        "n_correct": n_correct,
+        "accuracy": n_correct / n_valid if n_valid else float("nan"),
+        "macro_f1": macro_f1,
+    }
+    for label, key in [("Attack", "attack"), ("Support", "support"), ("No Relation", "no_relation")]:
+        if label in per_class:
+            m = per_class[label]
+            result[f"true_positive_{key}"]  = m["TP"]
+            result[f"false_positive_{key}"] = m["FP"]
+            result[f"false_negative_{key}"] = m["FN"]
+            result[f"true_negative_{key}"]  = m["TN"]
+            result[f"precision_{key}"]      = m["Precision"]
+            result[f"recall_{key}"]         = m["Recall"]
+            result[f"f1_score_{key}"]       = m["F1"]
+        else:
+            for pfx in ("true_positive", "false_positive", "false_negative", "true_negative",
+                        "precision", "recall", "f1_score"):
+                result[f"{pfx}_{key}"] = float("nan")
+    return result
+
+
+def append_to_overview(results_csv: str, strategy: str, config: dict,
+                       overview_csv: str = "ResultOverview_allTests.csv") -> None:
+    """Compute metrics for *strategy* in results_csv and append one row to overview_csv."""
+
+
+    df = pd.read_csv(results_csv)
+    strat_df = df[df["strategy"] == strategy].copy()
+    if strat_df.empty:
+        return
+
+    metrics = compute_metrics(strat_df, strategy)
+
+    try:
+        git_hash = subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            stderr=subprocess.DEVNULL,
+            cwd=Path(__file__).parent,
+        ).decode().strip()
+    except Exception:
+        git_hash = "unknown"
+
+    counts = strat_df["support [true value]"].value_counts()
+    few_shot_n = config.get("few_shot_n", 0)
+
+    pred_attack      = int(strat_df["pred_attack"].fillna(0).sum())
+    pred_support     = int(strat_df["pred_support"].fillna(0).sum())
+    pred_no_relation = int(strat_df["pred_neither"].fillna(0).sum())
+
+    row = {
+        # ── Run metadata ──────────────────────────────────────────────────
+        "timestamp":                      datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "git_commit":                     git_hash,
+        "model":                          config.get("model"),
+        "strategy":                       strategy,
+        "few_shot_n":                     few_shot_n,
+        "dataset_file":                   config.get("dataset_file"),
+        "limit_config":                   config.get("limit"),
+        "batch_size":                     config.get("batch_size"),
+        "delay_seconds":                  config.get("delay_seconds"),
+        "max_retries":                    config.get("max_retries"),
+        # ── Dataset structure ─────────────────────────────────────────────
+        "n_evaluated":                    metrics["n_evaluated"],
+        "ground_truth_count_attack":      int(counts.get(0, 0)),
+        "ground_truth_count_support":     int(counts.get(1, 0)),
+        "ground_truth_count_no_relation": int(counts.get(2, 0)),
+        "predicted_count_attack":         pred_attack,
+        "predicted_count_support":        pred_support,
+        "predicted_count_no_relation":    pred_no_relation,
+        # ── Aggregate metrics ─────────────────────────────────────────────
+        "accuracy":                       metrics["accuracy"],
+        # ── Per-class confusion matrix ────────────────────────────────────
+        "true_positive_attack":           metrics["true_positive_attack"],
+        "false_positive_attack":          metrics["false_positive_attack"],
+        "false_negative_attack":          metrics["false_negative_attack"],
+        "true_negative_attack":           metrics["true_negative_attack"],
+        "true_positive_support":          metrics["true_positive_support"],
+        "false_positive_support":         metrics["false_positive_support"],
+        "false_negative_support":         metrics["false_negative_support"],
+        "true_negative_support":          metrics["true_negative_support"],
+        "true_positive_no_relation":      metrics["true_positive_no_relation"],
+        "false_positive_no_relation":     metrics["false_positive_no_relation"],
+        "false_negative_no_relation":     metrics["false_negative_no_relation"],
+        "true_negative_no_relation":      metrics["true_negative_no_relation"],
+        # ── Per-class precision ───────────────────────────────────────────
+        "precision_attack":               metrics["precision_attack"],
+        "precision_support":              metrics["precision_support"],
+        "precision_no_relation":          metrics["precision_no_relation"],
+        # ── Per-class recall ──────────────────────────────────────────────
+        "recall_attack":                  metrics["recall_attack"],
+        "recall_support":                 metrics["recall_support"],
+        "recall_no_relation":             metrics["recall_no_relation"],
+        # ── Per-class F1 ──────────────────────────────────────────────────
+        "f1_score_attack":                metrics["f1_score_attack"],
+        "f1_score_support":               metrics["f1_score_support"],
+        "f1_score_no_relation":           metrics["f1_score_no_relation"],
+        # ── Macro F1 (at the end) ─────────────────────────────────────────
+        "macro_f1":                       metrics["macro_f1"],
+    }
+
+    overview_path = Path(overview_csv)
+    if overview_path.exists():
+        existing = pd.read_csv(overview_path)
+        updated = pd.concat([existing, pd.DataFrame([row])], ignore_index=True)
+    else:
+        updated = pd.DataFrame([row])
+    updated.to_csv(overview_path, index=False)
+
+
 # ── main ──────────────────────────────────────────────────────────────────────
 
-def main():
-    csv_path = Path(sys.argv[1]) if len(sys.argv) > 1 else CSV_PATH
-    if not csv_path.exists():
-        print(f"ERROR: {csv_path} not found.", file=sys.stderr)
-        sys.exit(1)
-
+def print_all_results(csv_path) -> None:
+    """Print per-strategy metrics and accuracy summary for the given results CSV."""
+    csv_path = Path(csv_path)
     df = pd.read_csv(csv_path)
     print(f"Loaded {len(df)} rows from {csv_path.name}")
     print(f"Strategies present: {sorted(df['strategy'].unique())}")
@@ -266,7 +394,6 @@ def main():
     for strategy in strategies:
         print_strategy(strategy, df[df["strategy"] == strategy].copy())
 
-    # ── top-level accuracy summary ─────────────────────────────────────────
     print_section("Accuracy summary")
     for strategy in strategies:
         n_correct, n_valid = accuracy_for_strategy(df[df["strategy"] == strategy])
@@ -274,6 +401,14 @@ def main():
         print(f"  Strategy {strategy}: {n_correct}/{n_valid} correct ({100*acc:.1f}%)")
 
     print(f"\n{'='*60}\n  Done.\n{'='*60}\n")
+
+
+def main():
+    csv_path = Path(sys.argv[1]) if len(sys.argv) > 1 else CSV_PATH
+    if not csv_path.exists():
+        print(f"ERROR: {csv_path} not found.", file=sys.stderr)
+        sys.exit(1)
+    print_all_results(csv_path)
 
 
 if __name__ == "__main__":

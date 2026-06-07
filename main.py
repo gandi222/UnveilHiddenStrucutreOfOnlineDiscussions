@@ -4,6 +4,7 @@ from pathlib import Path
 
 from langchain_ollama import ChatOllama
 
+from evaluation import append_to_overview, print_all_results
 from pipeline import load_arrow_dataset, run_evaluation, sample_few_shot
 from prompts import STRATEGIES
 
@@ -14,7 +15,7 @@ ARROW_FILE = "NR_WebDataset/data-00000-of-00001.arrow"
 OUTPUT_CSV = "results2.csv"
 BASE_URL = "https://ollama-gpt-oss.cluster.ai.wu.ac.at/"
 MODEL = "gemma4:latest"
-LIMIT = 40          # set to None to use all 4000 pairs
+LIMIT = 20          # set to None to use all 4000 pairs
 BATCH_SIZE = 10
 DELAY_SECONDS = 0
 MAX_RETRIES = 1
@@ -26,6 +27,7 @@ STRATEGIES_TO_RUN = ["D"]
 # 0 = no few-shot (zero-shot). Sampled once per strategy, balanced across classes.
 # For strategy B only Attack/Support examples are eligible (not No Relation).
 FEW_SHOT_N = 5
+TRACK_RESULTS = 1   # set to 0 to skip writing ResultOverview_allTests.csv
 # ---------------------------------------------------------------------------
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -80,7 +82,23 @@ def main():
             few_shot=few_shot if few_shot else None,
         )
 
-    log.info("Done. Run evaluation.py for full metrics.")
+        if TRACK_RESULTS:
+            append_to_overview(
+                OUTPUT_CSV, strategy,
+                config={
+                    "model":          MODEL,
+                    "few_shot_n":     len(few_shot),
+                    "limit":          LIMIT,
+                    "batch_size":     BATCH_SIZE,
+                    "delay_seconds":  DELAY_SECONDS,
+                    "max_retries":    MAX_RETRIES,
+                    "dataset_file":   ARROW_FILE,
+                },
+            )
+            log.info("Overview row appended to ResultOverview_allTests.csv")
+
+    print_all_results(OUTPUT_CSV)
+    log.info("Done.")
 
 
 if __name__ == "__main__":
