@@ -28,20 +28,41 @@ def load_arrow_dataset(arrow_file: str, limit=None) -> pd.DataFrame:
     df = table.to_pandas()
     df["orig_idx"] = df.index
 
-    # log.info("=== Input file structure ===")
-    # log.info("Rows:    %d", len(df))
-    # log.info("Columns: %s", list(df.columns))
-    # log.info("Dtypes:\n%s", df.dtypes.to_string())
-    # log.info("Value counts for 'support' (0=Attack, 1=Support, 2=No Relation):\n%s", df["support"].value_counts().to_string())
-    # log.info("Sample row:\n%s", df.iloc[0].to_string())
-    # log.info("============================")
-
     df = df.sample(frac=1).reset_index(drop=True)
     if limit is not None:
         df = df.iloc[:limit]
 
     log.info("Loaded %d argument pairs from %s", len(df), arrow_path)
     return df
+
+
+def sample_few_shot(df: pd.DataFrame, strategy: str, n: int) -> pd.DataFrame:
+    """Return a DataFrame of n balanced few-shot rows sampled from df.
+
+    Strategy B can only demonstrate Attack and Support (not No Relation), so
+    No Relation rows are excluded from its pool.
+    Sampling is balanced: roughly equal representation per eligible class.
+    The returned DataFrame preserves df's index so callers can exclude these
+    rows from the evaluation set.
+    """
+    if n == 0:
+        return df.iloc[:0]  # empty DataFrame with correct columns
+
+    eligible_classes = [0, 1] if strategy == "B" else [0, 1, 2]
+    pool = df[df["support"].isin(eligible_classes)]
+
+    k = len(eligible_classes)
+    per_class, remainder = divmod(n, k)
+
+    selected = []
+    for i, cls in enumerate(eligible_classes):
+        take = per_class + (1 if i < remainder else 0)
+        cls_rows = pool[pool["support"] == cls]
+        take = min(take, len(cls_rows))
+        if take > 0:
+            selected.append(cls_rows.sample(take))
+
+    return pd.concat(selected).sample(frac=1)
 
 
 def run_evaluation(
@@ -52,23 +73,43 @@ def run_evaluation(
     delay_seconds: float,
     max_retries: int,
     output_csv: str,
+    few_shot: list = None,
 ) -> None:
-    """Split the dataset into batches, call the API once per batch, and append results to CSV immediately."""
+    """Split the dataset into batches, call the API once per batch, and append results to CSV immediately.
+
+    few_shot: pre-sampled list of (arg1, arg2, support_int) tuples, or None for zero-shot.
+    The caller is responsible for ensuring these rows are excluded from df.
+    """
     prompt_fn = STRATEGIES[strategy]
     total = len(df)
     rows = list(df.itertuples(index=False))
 
-    log.info("Strategy %s  |  %d pairs  |  batch size %d", strategy, total, batch_size)
+    if few_shot is None:
+        few_shot = []
 
+    log.info(
+        "Strategy %s  |  %d pairs  |  batch size %d  |  few-shot examples: %d",
+        strategy, total, batch_size, len(few_shot),
+    )
+    if few_shot:
+        for i, (arg1, arg2, support) in enumerate(few_shot, start=1):
+            log.info(
+                "  Few-shot example %d: label=%s (%d) | Arg1: %.60s | Arg2: %.60s",
+                i, SUPPORT_MAP[support], support, arg1, arg2,
+            )
+
+    _printed_first_prompt = False
     for batch_start in range(0, total, batch_size):
         batch_rows = rows[batch_start: batch_start + batch_size]
         batch_end = batch_start + len(batch_rows)
         pairs = [(r.arg1, r.arg2) for r in batch_rows]
 
-        prompt = prompt_fn(pairs)
+        prompt = prompt_fn(pairs, few_shot=few_shot if few_shot else None)
 
+        if not _printed_first_prompt:
+            print(f"\n{'='*60}\n[FULL PROMPT — strategy {strategy}, batch 1]\n{'='*60}\n{prompt}\n{'='*60}\n")
+            _printed_first_prompt = True
         # log.info("BATCH %d–%d  (strategy %s)", batch_start + 1, batch_end, strategy)
-        # log.info("[PROMPT]\n%s", prompt)
 
         parsed_batch = None
 
