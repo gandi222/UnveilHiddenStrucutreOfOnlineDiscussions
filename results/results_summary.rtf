@@ -1,8 +1,8 @@
 {\rtf1\ansi\ansicpg1252\cocoartf2870
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\paperw11900\paperh16840\margl1440\margr1440\vieww29200\viewh15760\viewkind0
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\froman\fcharset0 Times-Roman;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\cssrgb\c0\c0\c0;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww28860\viewh16780\viewkind0
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
 \f0\fs24 \cf0 \
@@ -103,4 +103,332 @@ Accuracy: 633/1000 correct = 0.6330  (63.3%)\
 ============================================================\
   Accuracy summary\
 ============================================================\
-  Strategy C: 633/1000 correct (63.3%)}
+  Strategy C: 633/1000 correct (63.3%)\
+\
+\
+\
+\
+\
+\
+\
+\
+NR_WebDataset_C_Batch5_zeroShot:\
+\
+\
+============================================================\
+  Strategy C\
+============================================================\
+\
+Total rows for strategy C: 1000\
+\
+Ground-truth label distribution:\
+  Attack      :  335\
+  Support     :  334\
+  No Relation :  331\
+\
+Predicted label distribution:\
+  Attack      :  247\
+  Support     :  286\
+  No Relation :  467\
+\
+Confusion matrix (rows = true label, cols = predicted label):\
+  Each cell [row R, col C] = number of samples whose TRUE label is R\
+  and whose PREDICTED label is C.\
+  Diagonal = correct predictions. Off-diagonal = errors.\
+                        Attack       Support   No Relation\
+  Attack                   168            74            93\
+  Support                   44           186           104\
+  No Relation               35            26           270\
+\
+Definitions (per class C, treating C as the positive class):\
+  TP = true  label == C  AND  predicted label == C  (correct positive)\
+  FP = true  label != C  AND  predicted label == C  (false alarm)\
+  FN = true  label == C  AND  predicted label != C  (missed positive)\
+  TN = true  label != C  AND  predicted label != C  (correct negative)\
+  Double-check: TP + FP + FN + TN must equal total valid pairs for every class.\
+\
+Per-class breakdown  (F1 = 2\'b7TP / (2\'b7TP + FP + FN)):\
+  Class             TP    FP    FN    TN   Precision   Recall       F1             Sum check\
+  -----------------------------------------------------------------------------------------------\
+  Attack           168    79   167   586      0.6802   0.5015   0.5773  [2\'b7168/582]  [1000==1000 OK]\
+    Precision = TP/(TP+FP) = 168/(168+79) = 168/247 = 0.6802\
+    Recall    = TP/(TP+FN) = 168/(168+167) = 168/335 = 0.5015\
+  Support          186   100   148   566      0.6503   0.5569   0.6000  [2\'b7186/620]  [1000==1000 OK]\
+    Precision = TP/(TP+FP) = 186/(186+100) = 186/286 = 0.6503\
+    Recall    = TP/(TP+FN) = 186/(186+148) = 186/334 = 0.5569\
+  No Relation      270   197    61   472      0.5782   0.8157   0.6767  [2\'b7270/798]  [1000==1000 OK]\
+    Precision = TP/(TP+FP) = 270/(270+197) = 270/467 = 0.5782\
+    Recall    = TP/(TP+FN) = 270/(270+61) = 270/331 = 0.8157\
+  => All class sums equal total valid pairs (1000). OK.\
+\
+Macro F1 = average of per-class F1 scores\
+  = (0.5773 + 0.6000 + 0.6767) / 3\
+  = 0.6180\
+\
+Accuracy: 624/1000 correct = 0.6240  (62.4000%)\
+\
+============================================================\
+  Accuracy summary\
+============================================================\
+  Strategy C: 624/1000 correct (62.4000%)\
+\
+============================================================\
+  Done.\
+============================================================\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f1\fs29\fsmilli14667 \cf0 \expnd0\expndtw0\kerning0
+chunk gr\'f6\'dfe 20, test\'a0 c, 100 elements failed\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 \kerning1\expnd0\expndtw0 \
+\
+\
+2026-06-07 18:06:51,433 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:07:23,719 WARNING [FAILED]  Batch 1\'9620 strategy C: Expected 20 items in response, got 19\
+2026-06-07 18:07:23,731 INFO [PROGRESS]  strategy C: 20/1000 pairs done\
+2026-06-07 18:07:27,398 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:07:59,275 INFO [PROGRESS]  strategy C: 40/1000 pairs done\
+2026-06-07 18:08:06,597 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:08:48,596 INFO [PROGRESS]  strategy C: 60/1000 pairs done\
+2026-06-07 18:08:52,338 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:09:27,553 INFO [PROGRESS]  strategy C: 80/1000 pairs done\
+2026-06-07 18:09:31,264 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:10:05,706 INFO [PROGRESS]  strategy C: 100/1000 pairs done\
+2026-06-07 18:10:12,461 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:10:47,707 WARNING [FAILED]  Batch 101\'96120 strategy C: Expected 20 items in response, got 21\
+2026-06-07 18:10:47,711 INFO [PROGRESS]  strategy C: 120/1000 pairs done\
+2026-06-07 18:10:51,981 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:11:26,673 INFO [PROGRESS]  strategy C: 140/1000 pairs done\
+2026-06-07 18:11:28,465 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:12:02,763 WARNING [FAILED]  Batch 141\'96160 strategy C: Expected 20 items in response, got 19\
+2026-06-07 18:12:02,768 INFO [PROGRESS]  strategy C: 160/1000 pairs done\
+2026-06-07 18:12:04,448 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:12:40,411 INFO [PROGRESS]  strategy C: 180/1000 pairs done\
+2026-06-07 18:12:42,204 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:13:17,203 INFO [PROGRESS]  strategy C: 200/1000 pairs done\
+2026-06-07 18:13:18,891 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:13:54,979 WARNING [FAILED]  Batch 201\'96220 strategy C: Expected 20 items in response, got 19\
+2026-06-07 18:13:54,985 INFO [PROGRESS]  strategy C: 220/1000 pairs done\
+2026-06-07 18:13:56,630 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:14:36,965 WARNING [FAILED]  Batch 221\'96240 strategy C: Expected 20 items in response, got 21\
+2026-06-07 18:14:36,970 INFO [PROGRESS]  strategy C: 240/1000 pairs done\
+2026-06-07 18:14:40,144 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:15:18,291 INFO [PROGRESS]  strategy C: 260/1000 pairs done\
+2026-06-07 18:15:36,480 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:16:12,216 INFO [PROGRESS]  strategy C: 280/1000 pairs done\
+2026-06-07 18:16:24,902 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:16:58,099 INFO [PROGRESS]  strategy C: 300/1000 pairs done\
+2026-06-07 18:17:02,533 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:17:39,962 INFO [PROGRESS]  strategy C: 320/1000 pairs done\
+2026-06-07 18:17:47,129 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:18:22,257 INFO [PROGRESS]  strategy C: 340/1000 pairs done\
+2026-06-07 18:18:26,349 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:19:02,934 INFO [PROGRESS]  strategy C: 360/1000 pairs done\
+2026-06-07 18:19:10,859 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:19:50,033 INFO [PROGRESS]  strategy C: 380/1000 pairs done\
+2026-06-07 18:20:21,427 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:20:56,834 INFO [PROGRESS]  strategy C: 400/1000 pairs done\
+2026-06-07 18:21:27,242 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:22:00,793 INFO [PROGRESS]  strategy C: 420/1000 pairs done\
+2026-06-07 18:22:02,485 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:22:39,056 INFO [PROGRESS]  strategy C: 440/1000 pairs done\
+2026-06-07 18:22:40,723 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:23:19,118 INFO [PROGRESS]  strategy C: 460/1000 pairs done\
+2026-06-07 18:23:20,716 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:23:55,527 INFO [PROGRESS]  strategy C: 480/1000 pairs done\
+2026-06-07 18:23:57,124 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:24:35,309 INFO [PROGRESS]  strategy C: 500/1000 pairs done\
+2026-06-07 18:24:36,983 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:25:10,980 WARNING [FAILED]  Batch 501\'96520 strategy C: Expected 20 items in response, got 21\
+2026-06-07 18:25:10,990 INFO [PROGRESS]  strategy C: 520/1000 pairs done\
+2026-06-07 18:25:33,884 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:26:01,806 INFO [PROGRESS]  strategy C: 540/1000 pairs done\
+2026-06-07 18:26:03,515 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:26:36,029 INFO [PROGRESS]  strategy C: 560/1000 pairs done\
+2026-06-07 18:26:37,626 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:27:14,892 INFO [PROGRESS]  strategy C: 580/1000 pairs done\
+2026-06-07 18:27:16,645 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:27:53,349 WARNING [FAILED]  Batch 581\'96600 strategy C: Expected 20 items in response, got 19\
+2026-06-07 18:27:53,356 INFO [PROGRESS]  strategy C: 600/1000 pairs done\
+2026-06-07 18:27:54,968 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:28:34,345 INFO [PROGRESS]  strategy C: 620/1000 pairs done\
+2026-06-07 18:28:35,964 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:29:10,907 INFO [PROGRESS]  strategy C: 640/1000 pairs done\
+2026-06-07 18:29:18,860 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:29:50,270 INFO [PROGRESS]  strategy C: 660/1000 pairs done\
+2026-06-07 18:30:15,121 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:30:47,463 INFO [PROGRESS]  strategy C: 680/1000 pairs done\
+2026-06-07 18:31:01,616 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:31:31,880 WARNING [FAILED]  Batch 681\'96700 strategy C: Expected 20 items in response, got 21\
+2026-06-07 18:31:31,895 INFO [PROGRESS]  strategy C: 700/1000 pairs done\
+2026-06-07 18:31:39,258 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:32:18,165 WARNING [FAILED]  Batch 701\'96720 strategy C: Expected 20 items in response, got 19\
+2026-06-07 18:32:18,173 INFO [PROGRESS]  strategy C: 720/1000 pairs done\
+2026-06-07 18:32:29,231 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:33:05,912 INFO [PROGRESS]  strategy C: 740/1000 pairs done\
+2026-06-07 18:33:10,070 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:33:44,787 INFO [PROGRESS]  strategy C: 760/1000 pairs done\
+2026-06-07 18:33:53,205 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:34:29,249 INFO [PROGRESS]  strategy C: 780/1000 pairs done\
+2026-06-07 18:34:36,979 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:35:13,371 INFO [PROGRESS]  strategy C: 800/1000 pairs done\
+2026-06-07 18:35:14,975 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:35:53,038 INFO [PROGRESS]  strategy C: 820/1000 pairs done\
+2026-06-07 18:35:54,721 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:36:26,341 INFO [PROGRESS]  strategy C: 840/1000 pairs done\
+2026-06-07 18:36:27,953 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:37:04,383 INFO [PROGRESS]  strategy C: 860/1000 pairs done\
+2026-06-07 18:37:06,008 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:37:33,625 WARNING [FAILED]  Batch 861\'96880 strategy C: Expecting value: line 21 column 1 (char 819)\
+2026-06-07 18:37:33,636 INFO [PROGRESS]  strategy C: 880/1000 pairs done\
+2026-06-07 18:37:35,281 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:38:13,522 INFO [PROGRESS]  strategy C: 900/1000 pairs done\
+2026-06-07 18:38:23,650 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:38:59,930 INFO [PROGRESS]  strategy C: 920/1000 pairs done\
+2026-06-07 18:39:04,098 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:39:37,512 INFO [PROGRESS]  strategy C: 940/1000 pairs done\
+2026-06-07 18:39:39,134 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:40:20,128 INFO [PROGRESS]  strategy C: 960/1000 pairs done\
+2026-06-07 18:40:23,377 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:40:57,934 INFO [PROGRESS]  strategy C: 980/1000 pairs done\
+2026-06-07 18:41:04,524 INFO HTTP Request: POST https://ollama-gpt-oss.cluster.ai.wu.ac.at/api/chat "HTTP/1.1 200 OK"\
+2026-06-07 18:41:40,574 INFO [PROGRESS]  strategy C: 1000/1000 pairs done\
+2026-06-07 18:41:40,654 INFO Overview row appended to ResultOverview_allTests.csv\
+Loaded 1000 rows from results2.csv\
+Strategies present: ['C']\
+\
+============================================================\
+  Strategy C\
+============================================================\
+\
+Total rows for strategy C: 800\
+  Rows skipped (missing predictions): 200\
+\
+Ground-truth label distribution:\
+  Attack      :  258\
+  Support     :  270\
+  No Relation :  272\
+\
+Predicted label distribution:\
+  Attack      :  220\
+  Support     :  272\
+  No Relation :  307\
+\
+Confusion matrix (rows = true label, cols = predicted label):\
+  Each cell [row R, col C] = number of samples whose TRUE label is R\
+  and whose PREDICTED label is C.\
+  Diagonal = correct predictions. Off-diagonal = errors.\
+                        Attack       Support   No Relation\
+  Attack                   131            72            55\
+  Support                   51           161            57\
+  No Relation               38            39           195\
+\
+Definitions (per class C, treating C as the positive class):\
+  TP = true  label == C  AND  predicted label == C  (correct positive)\
+  FP = true  label != C  AND  predicted label == C  (false alarm)\
+  FN = true  label == C  AND  predicted label != C  (missed positive)\
+  TN = true  label != C  AND  predicted label != C  (correct negative)\
+  Double-check: TP + FP + FN + TN must equal total valid pairs for every class.\
+\
+Per-class breakdown  (F1 = 2\'b7TP / (2\'b7TP + FP + FN)):\
+  Class             TP    FP    FN    TN   Precision   Recall       F1             Sum check\
+  -----------------------------------------------------------------------------------------------\
+  Attack           131    89   127   452      0.5955   0.5078   0.5481  [2\'b7131/478]  [799==799 OK]\
+    Precision = TP/(TP+FP) = 131/(131+89) = 131/220 = 0.5955\
+    Recall    = TP/(TP+FN) = 131/(131+127) = 131/258 = 0.5078\
+  Support          161   111   108   419      0.5919   0.5985   0.5952  [2\'b7161/541]  [799==799 OK]\
+    Precision = TP/(TP+FP) = 161/(161+111) = 161/272 = 0.5919\
+    Recall    = TP/(TP+FN) = 161/(161+108) = 161/269 = 0.5985\
+  No Relation      195   112    77   415      0.6352   0.7169   0.6736  [2\'b7195/579]  [799==799 OK]\
+    Precision = TP/(TP+FP) = 195/(195+112) = 195/307 = 0.6352\
+    Recall    = TP/(TP+FN) = 195/(195+77) = 195/272 = 0.7169\
+  => All class sums equal total valid pairs (799). OK.\
+\
+Macro F1 = average of per-class F1 scores\
+  = (0.5481 + 0.5952 + 0.6736) / 3\
+  = 0.6056\
+\
+Accuracy: 487/800 correct = 0.6088  (60.8750%)  [200 rows skipped \'97 missing predictions]\
+\
+============================================================\
+  Accuracy summary\
+============================================================\
+  Strategy C: 487/800 correct (60.8750%)\
+\
+============================================================\
+  Done.\
+==========================================\
+\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f1\fs29\fsmilli14667 \cf0 \expnd0\expndtw0\kerning0
+Few shot 10, chunk 10, test c\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 \kerning1\expnd0\expndtw0 \
+\
+\
+\
+============================================================\
+  Strategy C\
+============================================================\
+\
+Total rows for strategy C: 1000\
+\
+Ground-truth label distribution:\
+  Attack      :  312\
+  Support     :  330\
+  No Relation :  358\
+\
+Predicted label distribution:\
+  Attack      :  259\
+  Support     :  298\
+  No Relation :  442\
+\
+Confusion matrix (rows = true label, cols = predicted label):\
+  Each cell [row R, col C] = number of samples whose TRUE label is R\
+  and whose PREDICTED label is C.\
+  Diagonal = correct predictions. Off-diagonal = errors.\
+                        Attack       Support   No Relation\
+  Attack                   161            63            87\
+  Support                   50           198            82\
+  No Relation               48            37           273\
+\
+Definitions (per class C, treating C as the positive class):\
+  TP = true  label == C  AND  predicted label == C  (correct positive)\
+  FP = true  label != C  AND  predicted label == C  (false alarm)\
+  FN = true  label == C  AND  predicted label != C  (missed positive)\
+  TN = true  label != C  AND  predicted label != C  (correct negative)\
+  Double-check: TP + FP + FN + TN must equal total valid pairs for every class.\
+\
+Per-class breakdown  (F1 = 2\'b7TP / (2\'b7TP + FP + FN)):\
+  Class             TP    FP    FN    TN   Precision   Recall       F1             Sum check\
+  -----------------------------------------------------------------------------------------------\
+  Attack           161    98   150   590      0.6216   0.5177   0.5649  [2\'b7161/570]  [999==999 OK]\
+    Precision = TP/(TP+FP) = 161/(161+98) = 161/259 = 0.6216\
+    Recall    = TP/(TP+FN) = 161/(161+150) = 161/311 = 0.5177\
+  Support          198   100   132   569      0.6644   0.6000   0.6306  [2\'b7198/628]  [999==999 OK]\
+    Precision = TP/(TP+FP) = 198/(198+100) = 198/298 = 0.6644\
+    Recall    = TP/(TP+FN) = 198/(198+132) = 198/330 = 0.6000\
+  No Relation      273   169    85   472      0.6176   0.7626   0.6825  [2\'b7273/800]  [999==999 OK]\
+    Precision = TP/(TP+FP) = 273/(273+169) = 273/442 = 0.6176\
+    Recall    = TP/(TP+FN) = 273/(273+85) = 273/358 = 0.7626\
+  => All class sums equal total valid pairs (999). OK.\
+\
+Macro F1 = average of per-class F1 scores\
+  = (0.5649 + 0.6306 + 0.6825) / 3\
+  = 0.6260\
+\
+Accuracy: 632/1000 correct = 0.6320  (63.2000%)\
+\
+============================================================\
+  Accuracy summary\
+============================================================\
+  Strategy C: 632/1000 correct (63.2000%)\
+\
+============================================================\
+  Done.\
+============================================================}
