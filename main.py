@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from pathlib import Path
 
 from langchain_ollama import ChatOllama
@@ -32,6 +33,14 @@ log = logging.getLogger(__name__)
 
 
 def main():
+    log.info("Date: %s", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    log.info(
+        "Configuration — model: %s | strategies: %s | limit: %s | few_shot_n: %d | "
+        "batch_size: %d | delay: %ds | max_retries: %d | output: %s",
+        MODEL, STRATEGIES_TO_RUN, LIMIT, FEW_SHOT_N,
+        BATCH_SIZE, DELAY_SECONDS, MAX_RETRIES, OUTPUT_CSV,
+    )
+
     Path(OUTPUT_CSV).unlink(missing_ok=True)
 
     full_df = load_arrow_dataset(ARROW_FILE)  # load all rows; LIMIT applied per strategy below
