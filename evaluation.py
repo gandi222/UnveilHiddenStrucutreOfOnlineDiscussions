@@ -1,57 +1,66 @@
 """
-Evaluation utilities: scoring model predictions against ground-truth labels.
+evaluation.py — standalone evaluation of results2.csv.
 
-Ground-truth label meaning (column "support"):
+Run with:  python evaluation.py [path/to/results2.csv]
+
+Ground-truth label (column "support [true value]"):
   0 = Attack  |  1 = Support  |  2 = No Relation
 
-Prompt strategies:
-  A — binary:      only predicts attack            (pred_attack)
-  B — two-class:   predicts attack or support      (pred_attack, pred_support)
-  C — three-class: predicts attack, support, neither (pred_attack, pred_support, pred_neither)
+Strategy A — binary: model predicts attack=0/1 only.
+  Correct when (support==0) ↔ (pred_attack==1).
+  Collapsed to binary for F1: positive class = Attack, negative = Not-Attack.
+
+Strategy B — two-class: model predicts attack=0/1 and support=0/1.
+  Correct when support==0→pred_attack==1, support==1→pred_support==1; support==2 always wrong.
+  Macro F1 over all 3 ground-truth classes.
+
+Strategy C — three-class: model predicts attack, support, neither.
+  Correct when the matching flag == 1.
+  Macro F1 over all 3 classes.
 """
+
+import sys
+from pathlib import Path
 
 import pandas as pd
 
+# Exported so pipeline.py can import it for the support_label column.
 SUPPORT_MAP = {0: "Attack", 1: "Support", 2: "No Relation"}
 
+CSV_PATH = Path(__file__).parent / "results2.csv"
 
-def compute_correct(row):
-    """Return 1 if the model prediction matches the ground truth, 0 if not, NA if prediction is missing.
 
-    Strategy A — binary (pred_attack only):
-      Correct when support==0 (Attack) ↔ pred_attack==1, otherwise pred_attack==0.
+# ── accuracy ──────────────────────────────────────────────────────────────────
 
-    Strategy B — two-class (pred_attack, pred_support):
-      support==0 → pred_attack must be 1
-      support==1 → pred_support must be 1
-      support==2 → always 0 (no "neither" class in B)
+def compute_correct_row(row):
+    """Return 1/0/None for one row from results2.csv.
 
-    Strategy C — three-class (pred_attack, pred_support, pred_neither):
-      support==0 → pred_attack must be 1
-      support==1 → pred_support must be 1
-      support==2 → pred_neither must be 1
+    Strategy A: correct ↔ (support==0) == (pred_attack==1)
+    Strategy B: support==0→pred_attack==1, support==1→pred_support==1, support==2→always 0
+    Strategy C: support==0→pred_attack==1, support==1→pred_support==1, support==2→pred_neither==1
+    Returns None when a required prediction column is missing.
     """
-    s = row["support"]
+    s = row["support [true value]"]
     strat = row["strategy"]
 
     if strat == "A":
         if pd.isna(row["pred_attack"]):
-            return pd.NA
+            return None
         return int((s == 0) == (row["pred_attack"] == 1))
 
     elif strat == "B":
         if pd.isna(row["pred_attack"]) or pd.isna(row["pred_support"]):
-            return pd.NA
+            return None
         if s == 0:
             return int(row["pred_attack"] == 1)
         elif s == 1:
             return int(row["pred_support"] == 1)
-        else:  # support==2, no "neither" class in B
-            return 0
+        else:
+            return 0  # No Relation is never correct in B
 
     elif strat == "C":
         if pd.isna(row["pred_attack"]) or pd.isna(row["pred_support"]) or pd.isna(row["pred_neither"]):
-            return pd.NA
+            return None
         if s == 0:
             return int(row["pred_attack"] == 1)
         elif s == 1:
@@ -59,20 +68,210 @@ def compute_correct(row):
         else:
             return int(row["pred_neither"] == 1)
 
-    return pd.NA
+    return None
 
 
-def add_correct_column(df: pd.DataFrame) -> pd.DataFrame:
-    """Add a 'correct' column to a predictions dataframe (modifies in place, returns df)."""
-    df["correct"] = df.apply(compute_correct, axis=1).astype("Int64")
-    return df
+def accuracy_for_strategy(df: pd.DataFrame):
+    """Return (correct_count, valid_count) for a single-strategy dataframe."""
+    results = [compute_correct_row(row) for _, row in df.iterrows()]
+    valid = [r for r in results if r is not None]
+    return sum(valid), len(valid)
 
 
-def accuracy_summary(df: pd.DataFrame) -> dict[str, float]:
-    """Return per-strategy accuracy as a dict {strategy: accuracy_fraction}."""
-    summary = {}
-    for strat, grp in df.groupby("strategy"):
-        valid = grp["correct"].dropna()
-        if len(valid):
-            summary[strat] = valid.mean()
-    return summary
+# ── label derivation ──────────────────────────────────────────────────────────
+
+def derive_labels_a(df: pd.DataFrame):
+    """Binary: Attack vs Not-Attack."""
+    valid = df.dropna(subset=["pred_attack"])
+    y_true = ["Attack" if s == 0 else "Not-Attack"
+              for s in valid["support [true value]"]]
+    y_pred = ["Attack" if p == 1 else "Not-Attack"
+              for p in valid["pred_attack"]]
+    classes = ["Attack", "Not-Attack"]
+    return y_true, y_pred, classes, len(df) - len(valid)
+
+
+def derive_labels_b(df: pd.DataFrame):
+    """Two-class: Attack or Support predicted; No Relation never predicted."""
+    valid = df.dropna(subset=["pred_attack", "pred_support"])
+    y_true = [SUPPORT_MAP[s] for s in valid["support [true value]"]]
+    y_pred = []
+    for _, row in valid.iterrows():
+        if row["pred_attack"] == 1:
+            y_pred.append("Attack")
+        elif row["pred_support"] == 1:
+            y_pred.append("Support")
+        else:
+            y_pred.append("No Relation")  # model output both 0 (invalid per prompt)
+    classes = ["Attack", "Support", "No Relation"]
+    return y_true, y_pred, classes, len(df) - len(valid)
+
+
+def derive_labels_c(df: pd.DataFrame):
+    """Three-class: Attack, Support, or No Relation."""
+    valid = df.dropna(subset=["pred_attack", "pred_support", "pred_neither"])
+    y_true = [SUPPORT_MAP[s] for s in valid["support [true value]"]]
+    y_pred = []
+    for _, row in valid.iterrows():
+        if row["pred_attack"] == 1:
+            y_pred.append("Attack")
+        elif row["pred_support"] == 1:
+            y_pred.append("Support")
+        elif row["pred_neither"] == 1:
+            y_pred.append("No Relation")
+        else:
+            y_pred.append(None)  # all flags == 0 (invalid per prompt)
+    classes = ["Attack", "Support", "No Relation"]
+    return y_true, y_pred, classes, len(df) - len(valid)
+
+
+# ── F1 computation ────────────────────────────────────────────────────────────
+
+def compute_f1(y_true, y_pred, classes):
+    """Return per-class metrics dict, macro F1, and count of skipped (None) predictions."""
+    pairs = [(t, p) for t, p in zip(y_true, y_pred) if p is not None]
+    n_skipped = len(y_true) - len(pairs)
+
+    metrics = {}
+    for cls in classes:
+        tp = sum(1 for t, p in pairs if t == cls and p == cls)
+        fp = sum(1 for t, p in pairs if t != cls and p == cls)
+        fn = sum(1 for t, p in pairs if t == cls and p != cls)
+        tn = sum(1 for t, p in pairs if t != cls and p != cls)
+
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+        recall    = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+        f1        = (2 * precision * recall / (precision + recall)
+                     if (precision + recall) > 0 else 0.0)
+
+        metrics[cls] = {
+            "TP": tp, "FP": fp, "FN": fn, "TN": tn,
+            "Precision": precision, "Recall": recall, "F1": f1,
+        }
+
+    macro_f1 = sum(m["F1"] for m in metrics.values()) / len(classes)
+    return metrics, macro_f1, n_skipped
+
+
+# ── pretty printing ───────────────────────────────────────────────────────────
+
+def print_section(title: str):
+    print(f"\n{'='*60}")
+    print(f"  {title}")
+    print(f"{'='*60}")
+
+
+def print_strategy(strategy: str, df: pd.DataFrame):
+    print_section(f"Strategy {strategy}")
+
+    derive_fn = {"A": derive_labels_a, "B": derive_labels_b, "C": derive_labels_c}[strategy]
+    y_true, y_pred, classes, n_missing_preds = derive_fn(df)
+
+    total = len(y_true)
+    print(f"\nTotal rows for strategy {strategy}: {total}")
+    if n_missing_preds:
+        print(f"  Rows skipped (missing predictions): {n_missing_preds}")
+
+    # ── ground-truth distribution ──────────────────────────────────────────
+    print("\nGround-truth label distribution:")
+    gt_counts = pd.Series(y_true).value_counts()
+    for cls in classes:
+        print(f"  {cls:12s}: {gt_counts.get(cls, 0):4d}")
+
+    # ── prediction distribution ────────────────────────────────────────────
+    print("\nPredicted label distribution:")
+    pred_counts = pd.Series([p for p in y_pred if p is not None]).value_counts()
+    for cls in classes:
+        print(f"  {cls:12s}: {pred_counts.get(cls, 0):4d}")
+
+    # ── confusion matrix ───────────────────────────────────────────────────
+    print("\nConfusion matrix (rows = true label, cols = predicted label):")
+    print("  Each cell [row R, col C] = number of samples whose TRUE label is R")
+    print("  and whose PREDICTED label is C.")
+    print("  Diagonal = correct predictions. Off-diagonal = errors.")
+    header = f"  {'':14s}" + "".join(f"{c:>14s}" for c in classes)
+    print(header)
+    pairs = [(t, p) for t, p in zip(y_true, y_pred) if p is not None]
+    for true_cls in classes:
+        row_vals = [sum(1 for t, p in pairs if t == true_cls and p == pred_cls)
+                    for pred_cls in classes]
+        row_str = "".join(f"{v:>14d}" for v in row_vals)
+        print(f"  {true_cls:14s}{row_str}")
+
+    # ── per-class breakdown ────────────────────────────────────────────────
+    metrics, macro_f1, _ = compute_f1(y_true, y_pred, classes)
+    n_valid_pairs = len(pairs)
+
+    print("\nDefinitions (per class C, treating C as the positive class):")
+    print("  TP = true  label == C  AND  predicted label == C  (correct positive)")
+    print("  FP = true  label != C  AND  predicted label == C  (false alarm)")
+    print("  FN = true  label == C  AND  predicted label != C  (missed positive)")
+    print("  TN = true  label != C  AND  predicted label != C  (correct negative)")
+    print("  Double-check: TP + FP + FN + TN must equal total valid pairs for every class.")
+
+    print(f"\nPer-class breakdown  (F1 = 2·TP / (2·TP + FP + FN)):")
+    print(f"  {'Class':14s} {'TP':>5} {'FP':>5} {'FN':>5} {'TN':>5}  "
+          f"{'Precision':>10} {'Recall':>8} {'F1':>8}  {'Sum check':>20}")
+    print(f"  {'-'*95}")
+    all_sums_ok = True
+    for cls in classes:
+        m = metrics[cls]
+        tp, fp, fn = m["TP"], m["FP"], m["FN"]
+        prec_denom = tp + fp
+        rec_denom  = tp + fn
+        f1_denom   = 2 * tp + fp + fn
+        total_check = tp + fp + fn + m["TN"]
+        ok = total_check == n_valid_pairs
+        if not ok:
+            all_sums_ok = False
+        check_str = f"[{total_check}=={n_valid_pairs} {'OK' if ok else 'FAIL'}]"
+        print(f"  {cls:14s} {tp:>5} {fp:>5} {fn:>5} {m['TN']:>5}  "
+              f"{m['Precision']:>10.4f} {m['Recall']:>8.4f} {m['F1']:>8.4f}"
+              f"  [2·{tp}/{f1_denom}]  {check_str}")
+        print(f"    Precision = TP/(TP+FP) = {tp}/({tp}+{fp}) = {tp}/{prec_denom} = {m['Precision']:.4f}")
+        print(f"    Recall    = TP/(TP+FN) = {tp}/({tp}+{fn}) = {tp}/{rec_denom} = {m['Recall']:.4f}")
+    if all_sums_ok:
+        print(f"  => All class sums equal total valid pairs ({n_valid_pairs}). OK.")
+
+    # ── macro F1 ───────────────────────────────────────────────────────────
+    f1_values = [f"{metrics[c]['F1']:.4f}" for c in classes]
+    print(f"\nMacro F1 = average of per-class F1 scores")
+    print(f"  = ({' + '.join(f1_values)}) / {len(classes)}")
+    print(f"  = {macro_f1:.4f}")
+
+    # ── accuracy ───────────────────────────────────────────────────────────
+    n_correct, n_valid = accuracy_for_strategy(df)
+    acc = n_correct / n_valid if n_valid else 0.0
+    print(f"\nAccuracy: {n_correct}/{n_valid} correct = {acc:.4f}  ({100*acc:.1f}%)"
+          + (f"  [{len(df) - n_valid} rows skipped — missing predictions]"
+             if len(df) - n_valid else ""))
+
+
+# ── main ──────────────────────────────────────────────────────────────────────
+
+def main():
+    csv_path = Path(sys.argv[1]) if len(sys.argv) > 1 else CSV_PATH
+    if not csv_path.exists():
+        print(f"ERROR: {csv_path} not found.", file=sys.stderr)
+        sys.exit(1)
+
+    df = pd.read_csv(csv_path)
+    print(f"Loaded {len(df)} rows from {csv_path.name}")
+    print(f"Strategies present: {sorted(df['strategy'].unique())}")
+
+    strategies = [s for s in sorted(df["strategy"].unique()) if s in ("A", "B", "C")]
+    for strategy in strategies:
+        print_strategy(strategy, df[df["strategy"] == strategy].copy())
+
+    # ── top-level accuracy summary ─────────────────────────────────────────
+    print_section("Accuracy summary")
+    for strategy in strategies:
+        n_correct, n_valid = accuracy_for_strategy(df[df["strategy"] == strategy])
+        acc = n_correct / n_valid if n_valid else 0.0
+        print(f"  Strategy {strategy}: {n_correct}/{n_valid} correct ({100*acc:.1f}%)")
+
+    print(f"\n{'='*60}\n  Done.\n{'='*60}\n")
+
+
+if __name__ == "__main__":
+    main()

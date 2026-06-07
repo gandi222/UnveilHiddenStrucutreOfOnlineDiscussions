@@ -11,7 +11,7 @@ import pyarrow.ipc as ipc
 from langchain_ollama import ChatOllama
 
 from api_client import call_api, parse_json_array
-from evaluation import SUPPORT_MAP, add_correct_column
+from evaluation import SUPPORT_MAP
 from prompts import STRATEGIES
 
 log = logging.getLogger(__name__)
@@ -109,7 +109,6 @@ def run_evaluation(
             "support_label",
             batch_df["support"].map(SUPPORT_MAP),
         )
-        add_correct_column(batch_df)
         batch_df = batch_df.rename(columns={"support": "support [true value]"})
 
         write_header = not Path(output_csv).exists()
