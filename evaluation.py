@@ -108,7 +108,7 @@ def derive_labels_b(df: pd.DataFrame):
             y_pred.append("Support")
         else:
             y_pred.append("No Relation")  # model output both 0 (invalid per prompt)
-    classes = ["Attack", "Support", "No Relation"]
+    classes = ["Attack", "Support"]
     return y_true, y_pred, classes, len(df) - len(valid)
 
 
