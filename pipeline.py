@@ -48,7 +48,7 @@ def sample_few_shot(df: pd.DataFrame, strategy: str, n: int) -> pd.DataFrame:
     if n == 0:
         return df.iloc[:0]  # empty DataFrame with correct columns
 
-    eligible_classes = [0, 1] if strategy == "B" else [0, 1, 2]
+    eligible_classes = [0, 1, 2] if strategy in ("C", "D") else [0, 1]
     pool = df[df["support"].isin(eligible_classes)]
 
     k = len(eligible_classes)

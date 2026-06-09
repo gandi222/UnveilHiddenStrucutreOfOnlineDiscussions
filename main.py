@@ -16,7 +16,7 @@ OUTPUT_CSV = "results2.csv"
 BASE_URL = "https://ollama-gpt-oss.cluster.ai.wu.ac.at/"
 MODEL = "gemma4:latest"
 LIMIT = 1000          # set to None to use all 4000 pairs
-BATCH_SIZE = 20
+BATCH_SIZE = 10
 DELAY_SECONDS = 0
 MAX_RETRIES = 2
 

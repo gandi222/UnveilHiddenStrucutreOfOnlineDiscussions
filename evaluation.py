@@ -34,6 +34,22 @@ SUPPORT_MAP = {0: "Attack", 1: "Support", 2: "No Relation"}
 
 CSV_PATH = Path(__file__).parent / "results2.csv"
 
+# ---------------------------------------------------------------------------
+# Configuration — only used when running evaluation.py directly
+# Fill in the values that match the results2.csv you're evaluating
+# ---------------------------------------------------------------------------
+EVAL_RESULTS_CSV  = "results2.csv"
+EVAL_OVERVIEW_CSV = "ResultOverview_allTests.csv"
+EVAL_MODEL        = "gemma4:latest"
+EVAL_FEW_SHOT_N   = 0
+EVAL_LIMIT        = 1000
+EVAL_BATCH_SIZE   = 10
+EVAL_DELAY        = 0
+EVAL_MAX_RETRIES  = 2
+EVAL_ARROW_FILE   = "WebDataset/data-00000-of-00001.arrow"
+EVAL_TRACK        = 1   # set to 0 to skip appending to ResultOverview_allTests.csv
+# ---------------------------------------------------------------------------
+
 
 # ── accuracy ──────────────────────────────────────────────────────────────────
 
@@ -404,11 +420,27 @@ def print_all_results(csv_path) -> None:
 
 
 def main():
-    csv_path = Path(sys.argv[1]) if len(sys.argv) > 1 else CSV_PATH
+    csv_path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(EVAL_RESULTS_CSV)
     if not csv_path.exists():
         print(f"ERROR: {csv_path} not found.", file=sys.stderr)
         sys.exit(1)
+
     print_all_results(csv_path)
+
+    if EVAL_TRACK:
+        config = {
+            "model":         EVAL_MODEL,
+            "few_shot_n":    EVAL_FEW_SHOT_N,
+            "limit":         EVAL_LIMIT,
+            "batch_size":    EVAL_BATCH_SIZE,
+            "delay_seconds": EVAL_DELAY,
+            "max_retries":   EVAL_MAX_RETRIES,
+            "dataset_file":  EVAL_ARROW_FILE,
+        }
+        df = pd.read_csv(csv_path)
+        for strategy in sorted(df["strategy"].unique()):
+            append_to_overview(str(csv_path), strategy, config, overview_csv=EVAL_OVERVIEW_CSV)
+            print(f"Strategy {strategy} appended to {EVAL_OVERVIEW_CSV}")
 
 
 if __name__ == "__main__":
