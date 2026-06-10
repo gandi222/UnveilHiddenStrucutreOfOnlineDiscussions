@@ -1206,4 +1206,66 @@ Accuracy: 672/1000 correct = 0.6720  (67.2000%)\
 \
 \
 \
+\pard\pardeftab720\partightenfactor0
+
+\f1\fs29\fsmilli14667 \cf0 \expnd0\expndtw0\kerning0
+Chunk gr\'f6\'dfe auf 10, test a , b, zero shot\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 \kerning1\expnd0\expndtw0 \
+\
+============================================================\
+  Strategy A\
+============================================================\
+\
+Total rows for strategy A: 1000\
+\
+Ground-truth label distribution:\
+  Attack      :  486\
+  Not-Attack  :  514\
+\
+Predicted label distribution:\
+  Attack      :  493\
+  Not-Attack  :  507\
+\
+Confusion matrix (rows = true label, cols = predicted label):\
+  Each cell [row R, col C] = number of samples whose TRUE label is R\
+  and whose PREDICTED label is C.\
+  Diagonal = correct predictions. Off-diagonal = errors.\
+                        Attack    Not-Attack\
+  Attack                   314           172\
+  Not-Attack               179           335\
+\
+Definitions (per class C, treating C as the positive class):\
+  TP = true  label == C  AND  predicted label == C  (correct positive)\
+  FP = true  label != C  AND  predicted label == C  (false alarm)\
+  FN = true  label == C  AND  predicted label != C  (missed positive)\
+  TN = true  label != C  AND  predicted label != C  (correct negative)\
+  Double-check: TP + FP + FN + TN must equal total valid pairs for every class.\
+\
+Per-class breakdown  (F1 = 2\'b7TP / (2\'b7TP + FP + FN)):\
+  Class             TP    FP    FN    TN   Precision   Recall       F1             Sum check\
+  -----------------------------------------------------------------------------------------------\
+  Attack           314   179   172   335      0.6369   0.6461   0.6415  [2\'b7314/979]  [1000==1000 OK]\
+    Precision = TP/(TP+FP) = 314/(314+179) = 314/493 = 0.6369\
+    Recall    = TP/(TP+FN) = 314/(314+172) = 314/486 = 0.6461\
+  Not-Attack       335   172   179   314      0.6607   0.6518   0.6562  [2\'b7335/1021]  [1000==1000 OK]\
+    Precision = TP/(TP+FP) = 335/(335+172) = 335/507 = 0.6607\
+    Recall    = TP/(TP+FN) = 335/(335+179) = 335/514 = 0.6518\
+  => All class sums equal total valid pairs (1000). OK.\
+\
+Macro F1 = average of per-class F1 scores\
+  = (0.6415 + 0.6562) / 2\
+  = 0.6488\
+\
+Accuracy: 649/1000 correct = 0.6490  (64.9000%)\
+\
+============================================================\
+  Accuracy summary\
+============================================================\
+  Strategy A: 649/1000 correct (64.9000%)\
+\
+============================================================\
+  Done.\
+============================================================\
 }
