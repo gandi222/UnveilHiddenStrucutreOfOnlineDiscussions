@@ -270,6 +270,61 @@ def run_accuracy_tests(df: pd.DataFrame) -> list[dict]:
         if rec:
             results.append(rec)
 
+    # ── Group 1b: few-shot dose-response (same strategy, batch 10) ───────
+    # A: all pairs from {7, 10, 14, 20}
+    a_shots = [7, 10, 14, 20]
+    for i, fs1 in enumerate(a_shots):
+        for fs2 in a_shots[i + 1:]:
+            r1 = get(df, "A", fs1, "Web", 10)
+            r2 = get(df, "A", fs2, "Web", 10)
+            rec = compare(
+                "1b_fewshot_dose_response",
+                f"A {fs1}-shot vs {fs2}-shot (b10)",
+                "A", "few_shot", "Web",
+                f"{fs1}-shot", r1,
+                f"{fs2}-shot", r2,
+            )
+            if rec:
+                results.append(rec)
+    # B: 10 vs 20
+    r_b10 = get(df, "B", 10, "Web", 10)
+    r_b20 = get(df, "B", 20, "Web", 10)
+    rec = compare(
+        "1b_fewshot_dose_response",
+        "B 10-shot vs 20-shot (b10)",
+        "B", "few_shot", "Web",
+        "10-shot", r_b10,
+        "20-shot", r_b20,
+    )
+    if rec:
+        results.append(rec)
+    # C: 10 vs 20
+    r_c10 = get(df, "C", 10, "NR_Web", 10)
+    r_c20 = get(df, "C", 20, "NR_Web", 10)
+    rec = compare(
+        "1b_fewshot_dose_response",
+        "C 10-shot vs 20-shot (b10)",
+        "C", "few_shot", "NR_Web",
+        "10-shot", r_c10,
+        "20-shot", r_c20,
+    )
+    if rec:
+        results.append(rec)
+
+    # ── Group 3b: A vs B at matched few-shot (batch 10, Web) ─────────────
+    for fs in (10, 20):
+        r_a = get(df, "A", fs, "Web", 10)
+        r_b = get(df, "B", fs, "Web", 10)
+        rec = compare(
+            "3b_cross_strategy_fewshot",
+            f"A vs B {fs}-shot (b10)",
+            "A+B", "strategy", "Web",
+            f"A {fs}-shot", r_a,
+            f"B {fs}-shot", r_b,
+        )
+        if rec:
+            results.append(rec)
+
     # ── Group 4: C vs D (zero-shot, batch 10) ────────────────────────────
     r_c = get(df, "C", 0, "NR_Web", 10)
     r_d = get(df, "D", 0, "NR_Web", 10)
@@ -300,10 +355,12 @@ def print_accuracy_results(results: list[dict]) -> None:
         groups.setdefault(r["group"], []).append(r)
 
     group_labels = {
-        "1_zeroshot_vs_fewshot": "GROUP 1 — Zero-shot vs Few-shot (same strategy, batch 10)",
-        "2_batch_size":          "GROUP 2 — Batch size (same strategy, zero-shot)",
-        "3_cross_strategy":      "GROUP 3 — Cross-strategy (zero-shot, matched batch)",
-        "4_C_vs_D":              "GROUP 4 — C vs D (zero-shot, batch 10)",
+        "1_zeroshot_vs_fewshot":     "GROUP 1 — Zero-shot vs Few-shot (same strategy, batch 10)",
+        "1b_fewshot_dose_response":   "GROUP 1b — Few-shot dose-response (same strategy, batch 10)",
+        "2_batch_size":               "GROUP 2 — Batch size (same strategy, zero-shot)",
+        "3_cross_strategy":           "GROUP 3 — Cross-strategy (zero-shot, matched batch)",
+        "3b_cross_strategy_fewshot":  "GROUP 3b — A vs B at matched few-shot (batch 10, WebDataset)",
+        "4_C_vs_D":                   "GROUP 4 — C vs D (zero-shot, batch 10)",
     }
 
     print("\n" + "=" * 70)
@@ -338,10 +395,12 @@ def build_markdown_report(results: list[dict]) -> str:
         groups.setdefault(r["group"], []).append(r)
 
     group_labels = {
-        "1_zeroshot_vs_fewshot": "Group 1 — Zero-shot vs Few-shot (same strategy, batch 10)",
-        "2_batch_size":          "Group 2 — Batch size (same strategy, zero-shot)",
-        "3_cross_strategy":      "Group 3 — Cross-strategy (zero-shot, matched batch)",
-        "4_C_vs_D":              "Group 4 — C vs D (zero-shot, batch 10)",
+        "1_zeroshot_vs_fewshot":     "Group 1 — Zero-shot vs Few-shot (same strategy, batch 10)",
+        "1b_fewshot_dose_response":   "Group 1b — Few-shot dose-response (same strategy, batch 10)",
+        "2_batch_size":               "Group 2 — Batch size (same strategy, zero-shot)",
+        "3_cross_strategy":           "Group 3 — Cross-strategy (zero-shot, matched batch)",
+        "3b_cross_strategy_fewshot":  "Group 3b — A vs B at matched few-shot (batch 10, WebDataset)",
+        "4_C_vs_D":                   "Group 4 — C vs D (zero-shot, batch 10)",
     }
 
     md = REPORT_INTRO + "## Results\n\n"
@@ -356,6 +415,11 @@ def build_markdown_report(results: list[dict]) -> str:
                 "C uses `NR_WebDataset` (ternary, chance ≈ 33%). "
                 "Cross-task accuracy is only loosely comparable — "
                 "results are still reported.\n\n"
+            )
+        if gid == "3b_cross_strategy_fewshot":
+            md += (
+                "> **Note:** Both A and B use `WebDataset` (binary); "
+                "only the prompt strategy differs.\n\n"
             )
         md += (
             "| Comparison | acc1 (n1) | acc2 (n2) | diff (pp) | z | p-value | Sig? |\n"

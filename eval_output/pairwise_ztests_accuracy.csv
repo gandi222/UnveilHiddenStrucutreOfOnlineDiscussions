@@ -15,4 +15,14 @@ group,comparison,strategy,factor,ds,group1,acc1,n1,group2,acc2,n2,diff_pp,z,p_va
 3_cross_strategy,"A vs B (b5, 0-shot)",A+B,strategy,Web+Web,A,0.64,1000,B,0.696,989,-5.565217391304344,-2.634498185147714,0.008426175426432314,True
 3_cross_strategy,"A vs B (b20, 0-shot)",A+B,strategy,Web+Web,A,0.6829787234042554,940,B,0.6966666666666667,900,-1.3687943262411295,-0.6344295809286071,0.5258005097423084,False
 3_cross_strategy,"B vs C (b5, 0-shot)",B+C,strategy,Web+NR_Web,B,0.696,989,C,0.624,1000,7.1652173913043455,3.3719696485615254,0.0007463267260223727,True
+1b_fewshot_dose_response,A 7-shot vs 10-shot (b10),A,few_shot,Web,7-shot,0.669,1000,10-shot,0.687,1000,-1.8000000000000016,-0.8614195511824991,0.389007011803163,False
+1b_fewshot_dose_response,A 7-shot vs 14-shot (b10),A,few_shot,Web,7-shot,0.669,1000,14-shot,0.669,1000,0.0,0.0,1.0,False
+1b_fewshot_dose_response,A 7-shot vs 20-shot (b10),A,few_shot,Web,7-shot,0.669,1000,20-shot,0.672,1000,-0.30000000000000027,-0.14271813319143598,0.8865127951055516,False
+1b_fewshot_dose_response,A 10-shot vs 14-shot (b10),A,few_shot,Web,10-shot,0.687,1000,14-shot,0.669,1000,1.8000000000000016,0.8614195511824991,0.389007011803163,False
+1b_fewshot_dose_response,A 10-shot vs 20-shot (b10),A,few_shot,Web,10-shot,0.687,1000,20-shot,0.672,1000,1.5000000000000013,0.7187328811658112,0.47230551960210265,False
+1b_fewshot_dose_response,A 14-shot vs 20-shot (b10),A,few_shot,Web,14-shot,0.669,1000,20-shot,0.672,1000,-0.30000000000000027,-0.14271813319143598,0.8865127951055516,False
+1b_fewshot_dose_response,B 10-shot vs 20-shot (b10),B,few_shot,Web,10-shot,0.66,1000,20-shot,0.7,1000,-3.9999999999999925,-1.9174124721184225,0.05518555099113431,False
+1b_fewshot_dose_response,C 10-shot vs 20-shot (b10),C,few_shot,NR_Web,10-shot,0.632,999,20-shot,0.641,999,-0.9009009009009028,-0.41850463350347117,0.675578199531192,False
+3b_cross_strategy_fewshot,A vs B 10-shot (b10),A+B,strategy,Web,A 10-shot,0.687,1000,B 10-shot,0.66,1000,2.7000000000000024,1.287473721590063,0.19792922318278605,False
+3b_cross_strategy_fewshot,A vs B 20-shot (b10),A+B,strategy,Web,A 20-shot,0.672,1000,B 20-shot,0.7,1000,-2.7999999999999914,-1.3490130521016697,0.17733277379511136,False
 4_C_vs_D,"C vs D (b10, 0-shot)",C+D,strategy,NR_Web,C,0.64,1000,D,0.594,988,4.587044534412954,2.103802705017002,0.03539566075463596,True
