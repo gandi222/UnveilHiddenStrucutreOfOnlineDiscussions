@@ -5,13 +5,13 @@ from pathlib import Path
 from langchain_ollama import ChatOllama
 
 from evaluation import append_to_overview, print_all_results
-from pipeline import load_arrow_dataset, run_evaluation, sample_few_shot
+from pipeline import load_dataset, run_evaluation, sample_few_shot
 from prompts import STRATEGIES
 
 # ---------------------------------------------------------------------------
 # Configuration — edit these as needed
 # ---------------------------------------------------------------------------
-ARROW_FILE = "NR_WebDataset/data-00000-of-00001.arrow"
+INPUT_FILE = "NR_WebDataset/data-00000-of-00001.arrow"
 OUTPUT_CSV = "results2.csv"
 BASE_URL = "https://ollama-gpt-oss.cluster.ai.wu.ac.at/"
 MODEL = "gemma4:latest"
@@ -45,7 +45,7 @@ def main():
 
     Path(OUTPUT_CSV).unlink(missing_ok=True)
 
-    full_df = load_arrow_dataset(ARROW_FILE)  # load all rows; LIMIT applied per strategy below
+    full_df = load_dataset(INPUT_FILE)  # load all rows; LIMIT applied per strategy below
     client = ChatOllama(base_url=BASE_URL, model=MODEL, temperature=1.0)
 
     invalid = [s for s in STRATEGIES_TO_RUN if s not in STRATEGIES]
@@ -92,7 +92,7 @@ def main():
                     "batch_size":     BATCH_SIZE,
                     "delay_seconds":  DELAY_SECONDS,
                     "max_retries":    MAX_RETRIES,
-                    "dataset_file":   ARROW_FILE,
+                    "dataset_file":   INPUT_FILE,
                 },
             )
             log.info("Overview row appended to ResultOverview_allTests.csv")

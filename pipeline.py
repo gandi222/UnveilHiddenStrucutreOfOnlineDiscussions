@@ -17,6 +17,35 @@ from prompts import STRATEGIES
 log = logging.getLogger(__name__)
 
 
+def load_dataset(path: str, limit=None) -> pd.DataFrame:
+    """Unified loader: dispatches to CSV or Arrow loader based on file extension."""
+    if path.endswith(".csv"):
+        return load_csv_dataset(path, limit)
+    return load_arrow_dataset(path, limit)
+
+
+def load_csv_dataset(csv_file: str, limit=None) -> pd.DataFrame:
+    csv_path = Path(csv_file)
+    if not csv_path.exists():
+        raise FileNotFoundError(f"CSV file not found: {csv_path}")
+
+    df = pd.read_csv(csv_path)
+    required = {"arg1", "arg2", "support"}
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(f"CSV is missing required columns: {missing}")
+
+    df = df.sample(frac=1).reset_index(drop=True)
+    if limit is not None:
+        df = df.iloc[:limit]
+
+    if "orig_idx" not in df.columns:
+        df["orig_idx"] = df.index
+
+    log.info("Loaded %d argument pairs from %s", len(df), csv_path)
+    return df
+
+
 def load_arrow_dataset(arrow_file: str, limit=None) -> pd.DataFrame:
     arrow_path = Path(arrow_file)
     if not arrow_path.exists():
@@ -92,7 +121,7 @@ def run_evaluation(
         strategy, total, batch_size, len(few_shot),
     )
     if few_shot:
-        for i, (arg1, arg2, support) in enumerate(few_shot, start=1):
+        for i, (arg1, arg2, support, *_rest) in enumerate(few_shot, start=1):
             log.info(
                 "  Few-shot example %d: label=%s (%d) | Arg1: %.60s | Arg2: %.60s",
                 i, SUPPORT_MAP[support], support, arg1, arg2,
