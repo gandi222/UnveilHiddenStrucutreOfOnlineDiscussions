@@ -16,7 +16,15 @@ OUTPUT_CSV = "QBAF_relevanceScore.csv"
 N_SAMPLES = 100
 
 df = load_arrow_dataset(ARROW_FILE)
-df = df.iloc[:N_SAMPLES].copy()
+
+# Sample equal numbers per class, then re-shuffle
+classes = [0, 1, 2]
+per_class, remainder = divmod(N_SAMPLES, len(classes))
+selected = []
+for i, cls in enumerate(classes):
+    take = per_class + (1 if i < remainder else 0)
+    selected.append(df[df["support"] == cls].iloc[:take])
+df = pd.concat(selected).sample(frac=1).reset_index(drop=True)
 
 df.insert(df.columns.get_loc("support") + 1, "support_label", df["support"].map(SUPPORT_MAP))
 df["relevance"] = pd.NA
