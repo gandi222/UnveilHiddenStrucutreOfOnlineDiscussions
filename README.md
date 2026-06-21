@@ -236,6 +236,60 @@ After each strategy run, `evaluation.append_to_overview()` re-reads `results2.cs
 
 ---
 
+## Statistical Evaluation
+
+`statisticalTests_evaluation.py` runs pairwise two-proportion z-tests on accuracy across runs stored in `ResultOverview_allTests.csv`.
+
+```bash
+python statisticalTests_evaluation.py [path/to/ResultOverview_allTests.csv]
+```
+
+Defaults to `ResultOverview_allTests.csv` next to the script. Outputs are written to `eval_output/`:
+
+| File | Description |
+|------|-------------|
+| `runs_annotated.csv` | Input data with added `ds`, `n_eff`, and `n_correct` columns |
+| `pairwise_ztests_accuracy.csv` | All z-test results, one row per comparison |
+| `evaluation_report.md` | Human-readable Markdown report with tables and plain-language summary |
+
+### How rows are matched
+
+**Row order does not matter.** Each comparison looks up rows by four key columns:
+
+| Column | Role |
+|--------|------|
+| `strategy` | `A`, `B`, `C`, or `D` |
+| `few_shot_n` | Number of few-shot examples (`0` = zero-shot) |
+| `batch_size` | Pairs per API call |
+| `ds` | Derived from `dataset_file`: prefix `NR_` → `NR_Web`, otherwise → `Web` |
+
+If no matching row is found a warning is printed and that comparison is skipped (no crash). If multiple rows match, the first is used with a warning.
+
+### Required columns
+
+| Always needed | Strategy-specific (for `n_eff`) |
+|---|---|
+| `strategy`, `few_shot_n`, `dataset_file`, `batch_size`, `accuracy` | A: `true_positive_attack`, `false_positive_attack`, `false_negative_attack`, `true_negative_attack` |
+| | B: `predicted_count_attack`, `predicted_count_support` |
+| | C / D: `predicted_count_attack`, `predicted_count_support`, `predicted_count_no_relation` |
+
+### Adding new results
+
+New rows appended to `ResultOverview_allTests.csv` are **automatically picked up** on the next run — no script changes needed. However, a new run is only **evaluated** if there is a hardcoded comparison in `run_accuracy_tests()` that references its `(strategy, few_shot_n, ds, batch_size)` combination. Runs that don't match any comparison are silently ignored. To include a new comparison, add it to the relevant group block in `run_accuracy_tests()`.
+
+### Comparison groups
+
+| Group | What is compared |
+|-------|-----------------|
+| 1 — Zero-shot vs few-shot | Same strategy and batch size (b10); varies `few_shot_n` |
+| 1b — Few-shot dose-response | All pairwise `few_shot_n` combinations within a strategy |
+| 2 — Batch size | Same strategy, zero-shot; varies `batch_size` |
+| 3 — Cross-strategy (zero-shot) | Different strategies at matched batch size (note: A/B use `Web`, C uses `NR_Web`) |
+| 3b — Cross-strategy (few-shot) | A vs B at matched `few_shot_n` (batch 10, `Web`) |
+| 4 — C vs D | Both zero-shot, batch 10, `NR_Web` |
+
+---
+
 ## Evaluation
 
 Results are printed to the console after each run. For each strategy, the output includes:

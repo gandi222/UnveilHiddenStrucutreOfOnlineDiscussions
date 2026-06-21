@@ -1,4 +1,4 @@
 google-genai
 pyarrow
 pandas
-numpy scipy
+numpy scipy statsmodels

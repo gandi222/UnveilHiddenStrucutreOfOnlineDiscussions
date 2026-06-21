@@ -16,15 +16,13 @@ Step 2 (per-class precision/recall) is out of scope for now.
 """
 
 import argparse
-import math
 import os
 import sys
 import warnings
 from typing import Optional
 
-import numpy as np
 import pandas as pd
-from scipy import stats
+from statsmodels.stats.proportion import proportions_ztest
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -102,30 +100,18 @@ def load_and_prepare(csv_path: str) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 
 def two_prop_ztest(x1: int, n1: int, x2: int, n2: int) -> dict:
-    """Two-proportion z-test (two-sided, unpaired).
+    """Two-proportion z-test (two-sided, unpaired) via statsmodels.
 
-    Accuracy is a binomial proportion; for large n the two-proportion z-test
-    is the correct comparison. A t-test is not appropriate for single-run
-    accuracies (binary outcomes; variance is fixed by the mean).
-
-    Parameters
-    ----------
-    x1, n1 : correct counts and effective n for run 1
-    x2, n2 : correct counts and effective n for run 2
-
-    Returns
-    -------
-    dict with keys: p1, p2, diff_pp, z, p_value, significant
+    Uses a pooled proportion for the SE, which is the standard approach when
+    testing H0: p1 == p2.
     """
     p1 = x1 / n1
     p2 = x2 / n2
     p_pool = (x1 + x2) / (n1 + n2)
-    se = math.sqrt(p_pool * (1 - p_pool) * (1 / n1 + 1 / n2))
-    if se == 0:
+    if p_pool in (0.0, 1.0):  # SE would be zero — undefined test
         return dict(p1=p1, p2=p2, diff_pp=(p1 - p2) * 100,
                     z=float("nan"), p_value=float("nan"), significant=False)
-    z = (p1 - p2) / se
-    p_value = 2 * (1 - stats.norm.cdf(abs(z)))
+    z, p_value = proportions_ztest([x1, x2], [n1, n2], alternative="two-sided")
     return dict(
         p1=p1,
         p2=p2,
