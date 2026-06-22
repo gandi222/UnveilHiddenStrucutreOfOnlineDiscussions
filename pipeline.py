@@ -171,6 +171,7 @@ def run_evaluation(
                 "pred_support": labels["pred_support"],
                 "pred_neither": labels["pred_neither"],
                 "pred_relevance": labels["pred_relevance"],
+                "relevance human labeled": getattr(row, "relevance_human_labeled", None),
             })
 
         batch_df = pd.DataFrame(batch_results)
