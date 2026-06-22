@@ -35,6 +35,11 @@ def load_csv_dataset(csv_file: str, limit=None) -> pd.DataFrame:
     if missing:
         raise ValueError(f"CSV is missing required columns: {missing}")
 
+    # itertuples() renames columns with spaces to positional names (_1, _2…),
+    # so normalize the human-label column name to use underscores.
+    if "relevance human labeled" in df.columns:
+        df = df.rename(columns={"relevance human labeled": "relevance_human_labeled"})
+
     df = df.sample(frac=1).reset_index(drop=True)
     if limit is not None:
         df = df.iloc[:limit]

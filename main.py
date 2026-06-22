@@ -7,6 +7,7 @@ from langchain_ollama import ChatOllama
 from evaluation import append_to_overview, print_all_results
 from pipeline import load_dataset, run_evaluation, sample_few_shot
 from prompts import STRATEGIES
+from relevance_evaluation import print_relevance_results
 
 # ---------------------------------------------------------------------------
 # Configuration — edit these as needed
@@ -61,10 +62,10 @@ def main():
         few_shot_indices = set(few_shot_df.index)
 
         if strategy == "D":
-            if "relevance human labeled" in full_df.columns:
+            if "relevance_human_labeled" in full_df.columns:
                 few_shot = list(zip(
                     few_shot_df["arg1"], few_shot_df["arg2"],
-                    few_shot_df["support"], few_shot_df["relevance human labeled"],
+                    few_shot_df["support"], few_shot_df["relevance_human_labeled"],
                 ))
             else:
                 print("no few shots possible, due to missing relevance score")
@@ -98,6 +99,8 @@ def main():
             log.info("Overview row appended to ResultOverview_allTests.csv")
 
     print_all_results(OUTPUT_CSV)
+    if "D" in STRATEGIES_TO_RUN:
+        print_relevance_results(OUTPUT_CSV)
     log.info("Done.")
 
 
