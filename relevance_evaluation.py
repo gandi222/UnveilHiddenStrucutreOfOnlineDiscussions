@@ -21,7 +21,7 @@ RESULTS_CSV = "results2.csv"
 
 
 def compute_relevance_metrics(df: pd.DataFrame) -> dict:
-    """Compute MAE, Pearson correlation, and L2 distance between pred_relevance
+    """Compute MAE, RMSE, Pearson correlation, and L2 distance between pred_relevance
     and relevance human labeled. Returns a dict with all results and the sample size."""
     sub = df[["pred_relevance", "relevance human labeled"]].dropna()
     pred = sub["pred_relevance"].to_numpy(dtype=float)
@@ -32,6 +32,12 @@ def compute_relevance_metrics(df: pd.DataFrame) -> dict:
     # Gives a point-wise measure of how far off the model is on average.
     # A score of 0.0 means perfect agreement; higher values mean larger typical error.
     mae = float(np.mean(np.abs(pred - human)))
+
+    # RMSE — Root Mean Square Error: sqrt of mean squared error.
+    # Like MAE but penalizes larger errors more heavily (via squaring).
+    # Useful alongside MAE: if RMSE >> MAE, errors are unevenly distributed
+    # (a few large outliers dominate); if RMSE ≈ MAE, errors are consistent.
+    rmse = float(np.sqrt(np.mean((pred - human) ** 2)))
 
     # Pearson r — linear correlation between pred_relevance and human scores.
     # Ranges from -1 (perfect inverse) to +1 (perfect agreement).
@@ -50,6 +56,7 @@ def compute_relevance_metrics(df: pd.DataFrame) -> dict:
     return {
         "n": n,
         "mae": mae,
+        "rmse": rmse,
         "pearson_r": float(pearson_r),
         "pearson_p": float(pearson_p),
         "l2_distance": l2_distance,
@@ -88,6 +95,8 @@ def print_relevance_results(csv_path) -> None:
     print(f"\n  Metrics:")
     print(f"    MAE          = {m['mae']:.4f}")
     print(f"      (mean |pred - human| over {m['n']} pairs)")
+    print(f"    RMSE         = {m['rmse']:.4f}")
+    print(f"      (sqrt(mean((pred - human)^2))  — penalizes outliers more than MAE)")
     print(f"    Pearson r    = {m['pearson_r']:.4f}  (p = {m['pearson_p']:.4f}"
           f"{'  *significant*' if m['pearson_p'] < 0.05 else '  not significant'})")
     print(f"      (linear correlation between model and human scores)")
