@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 import pyarrow.ipc as ipc
-from langchain_ollama import ChatOllama
+from langchain_core.language_models import BaseChatModel
 
 from api_client import call_api, parse_json_array
 from evaluation import SUPPORT_MAP
@@ -102,7 +102,7 @@ def sample_few_shot(df: pd.DataFrame, strategy: str, n: int) -> pd.DataFrame:
 def run_evaluation(
     df: pd.DataFrame,
     strategy: str,
-    client: ChatOllama,
+    client: BaseChatModel,
     batch_size: int,
     delay_seconds: float,
     max_retries: int,

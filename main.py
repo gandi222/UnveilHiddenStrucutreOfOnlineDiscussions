@@ -1,8 +1,7 @@
 import logging
+import os
 from datetime import datetime
 from pathlib import Path
-
-from langchain_ollama import ChatOllama
 
 from evaluation import append_to_overview, print_all_results
 from pipeline import load_dataset, run_evaluation, sample_few_shot
@@ -14,8 +13,20 @@ from relevance_evaluation import print_relevance_results
 # ---------------------------------------------------------------------------
 INPUT_FILE = "QBAF_relevanceScoreHumanLabeled.csv"
 OUTPUT_CSV = "results2.csv"
-BASE_URL = "https://ollama-gpt-oss.cluster.ai.wu.ac.at/"
+
+# Provider selection: "ollama" | "anthropic" | "openai"
+PROVIDER = "ollama"
+# Model name for the selected provider:
+#   ollama:    "gemma4:latest"
+#   anthropic: "claude-opus-4-8"
+#   openai:    "gpt-5.5"
 MODEL = "gemma4:latest"
+
+# API keys are read from environment variables — set them before running:
+#   Anthropic: ANTHROPIC_API_KEY
+#   OpenAI:    OPENAI_API_KEY
+#   Ollama:    OLLAMA_BASE_URL  (falls back to the default WU cluster URL)
+
 LIMIT = 1000          # set to None to use all 4000 pairs
 BATCH_SIZE = 10
 DELAY_SECONDS = 0
@@ -35,6 +46,18 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 log = logging.getLogger(__name__)
 
 
+def build_client():
+    if PROVIDER == "anthropic":
+        from langchain_anthropic import ChatAnthropic
+        return ChatAnthropic(model=MODEL, api_key=os.getenv("ANTHROPIC_API_KEY"), temperature=1.0)
+    if PROVIDER == "openai":
+        from langchain_openai import ChatOpenAI
+        return ChatOpenAI(model=MODEL, api_key=os.getenv("OPENAI_API_KEY"), temperature=1.0)
+    from langchain_ollama import ChatOllama
+    base_url = os.getenv("OLLAMA_BASE_URL", "https://ollama-gpt-oss.cluster.ai.wu.ac.at/")
+    return ChatOllama(base_url=base_url, model=MODEL, temperature=1.0)
+
+
 def main():
     log.info("Date: %s", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     log.info(
@@ -47,7 +70,7 @@ def main():
     Path(OUTPUT_CSV).unlink(missing_ok=True)
 
     full_df = load_dataset(INPUT_FILE)  # load all rows; LIMIT applied per strategy below
-    client = ChatOllama(base_url=BASE_URL, model=MODEL, temperature=1.0)
+    client = build_client()
 
     invalid = [s for s in STRATEGIES_TO_RUN if s not in STRATEGIES]
     if invalid:

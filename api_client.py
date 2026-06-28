@@ -7,13 +7,13 @@ import logging
 import re
 import time
 
-from langchain_ollama import ChatOllama
+from langchain_core.language_models import BaseChatModel
 
 log = logging.getLogger(__name__)
 
 
-def call_api(llm: ChatOllama, prompt: str, max_retries: int) -> str:
-    """Send a prompt to the Ollama server and return the raw response text."""
+def call_api(llm: BaseChatModel, prompt: str, max_retries: int) -> str:
+    """Send a prompt to the LLM and return the raw response text."""
     for attempt in range(1, max_retries + 1):
         try:
             response = llm.invoke(prompt)

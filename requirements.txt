@@ -2,3 +2,6 @@ google-genai
 pyarrow
 pandas
 numpy scipy statsmodels
+langchain-ollama
+langchain-anthropic
+langchain-openai
