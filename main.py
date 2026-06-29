@@ -15,12 +15,12 @@ INPUT_FILE = "QBAF_relevanceScoreHumanLabeled.csv"
 OUTPUT_CSV = "results2.csv"
 
 # Provider selection: "ollama" | "anthropic" | "openai"
-PROVIDER = "ollama"
+PROVIDER = "anthropic"
 # Model name for the selected provider:
 #   ollama:    "gemma4:latest"
 #   anthropic: "claude-opus-4-8"
 #   openai:    "gpt-5.5"
-MODEL = "gemma4:latest"
+MODEL = "claude-opus-4-8"
 
 # API keys are read from environment variables — set them before running:
 #   Anthropic: ANTHROPIC_API_KEY
@@ -28,12 +28,12 @@ MODEL = "gemma4:latest"
 #   Ollama:    OLLAMA_BASE_URL  (falls back to the default WU cluster URL)
 
 LIMIT = 1000          # set to None to use all 4000 pairs
-BATCH_SIZE = 10
+BATCH_SIZE = 20
 DELAY_SECONDS = 0
 MAX_RETRIES = 2
 
 # "A" — binary, "B" — two-class, "C" — three-class, "D" — three-class + relevance score (zero-shot if dataset has no relevance column), or all at once
-STRATEGIES_TO_RUN = ["D"]
+STRATEGIES_TO_RUN = ["B"]
 
 # Number of labeled examples injected into each prompt as few-shot context.
 # 0 = no few-shot (zero-shot). Sampled once per strategy, balanced across classes.
