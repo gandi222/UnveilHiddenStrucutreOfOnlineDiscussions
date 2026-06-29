@@ -11,16 +11,16 @@ from relevance_evaluation import print_relevance_results
 # ---------------------------------------------------------------------------
 # Configuration — edit these as needed
 # ---------------------------------------------------------------------------
-INPUT_FILE = "QBAF_relevanceScoreHumanLabeled.csv"
+INPUT_FILE = "WebDataset/data-00000-of-00001.arrow"
 OUTPUT_CSV = "results2.csv"
 
 # Provider selection: "ollama" | "anthropic" | "openai"
-PROVIDER = "anthropic"
+PROVIDER = "openai"
 # Model name for the selected provider:
 #   ollama:    "gemma4:latest"
 #   anthropic: "claude-opus-4-8"
 #   openai:    "gpt-5.5"
-MODEL = "claude-opus-4-8"
+MODEL = "gpt-5.5"
 
 # API keys are read from environment variables — set them before running:
 #   Anthropic: ANTHROPIC_API_KEY

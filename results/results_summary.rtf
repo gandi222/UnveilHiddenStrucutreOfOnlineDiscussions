@@ -1,14 +1,14 @@
 {\rtf1\ansi\ansicpg1252\cocoartf2870
 \cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\froman\fcharset0 Times-Roman;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\cssrgb\c0\c0\c0;}
 {\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc0\levelnfcn0\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{decimal\}}{\leveltext\leveltemplateid1\'01\'00;}{\levelnumbers\'01;}\fi-360\li720\lin720 }{\listname ;}\listid1}
 {\list\listtemplateid2\listhybrid{\listlevel\levelnfc0\levelnfcn0\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{decimal\}}{\leveltext\leveltemplateid101\'01\'00;}{\levelnumbers\'01;}\fi-360\li720\lin720 }{\listname ;}\listid2}
 {\list\listtemplateid3\listhybrid{\listlevel\levelnfc0\levelnfcn0\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{decimal\}}{\leveltext\leveltemplateid201\'01\'00;}{\levelnumbers\'01;}\fi-360\li720\lin720 }{\listname ;}\listid3}
 {\list\listtemplateid4\listhybrid{\listlevel\levelnfc0\levelnfcn0\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{decimal\}}{\leveltext\leveltemplateid301\'01\'00;}{\levelnumbers\'01;}\fi-360\li720\lin720 }{\listname ;}\listid4}
 {\list\listtemplateid5\listhybrid{\listlevel\levelnfc0\levelnfcn0\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{decimal\}}{\leveltext\leveltemplateid401\'01\'00;}{\levelnumbers\'01;}\fi-360\li720\lin720 }{\listname ;}\listid5}}
 {\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}{\listoverride\listid2\listoverridecount0\ls2}{\listoverride\listid3\listoverridecount0\ls3}{\listoverride\listid4\listoverridecount0\ls4}{\listoverride\listid5\listoverridecount0\ls5}}
-\paperw11900\paperh16840\margl1440\margr1440\vieww29200\viewh15700\viewkind0
+\paperw11900\paperh16840\margl1440\margr1440\vieww29200\viewh15840\viewkind0
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
 \f0\fs24 \cf0 \
@@ -1473,4 +1473,293 @@ Accuracy: 53/100 correct = 0.5300  (53.0000%)\
 \
 ============================================================\
   Done.\
-============================================================}
+============================================================\
+\
+\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\
+\
+\
+anthropic:\
+\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f1\fs29\fsmilli14667 \cf0 \expnd0\expndtw0\kerning0
+Strategy B, 0 shot\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 \kerning1\expnd0\expndtw0 \
+============================================================\
+  Strategy B\
+============================================================\
+\
+Total rows for strategy B: 1000\
+\
+Ground-truth label distribution:\
+  Attack      :  484\
+  Support     :  516\
+\
+Predicted label distribution:\
+  Attack      :  478\
+  Support     :  522\
+\
+Confusion matrix (rows = true label, cols = predicted label):\
+  Each cell [row R, col C] = number of samples whose TRUE label is R\
+  and whose PREDICTED label is C.\
+  Diagonal = correct predictions. Off-diagonal = errors.\
+                        Attack       Support\
+  Attack                   348           136\
+  Support                  130           386\
+\
+Definitions (per class C, treating C as the positive class):\
+  TP = true  label == C  AND  predicted label == C  (correct positive)\
+  FP = true  label != C  AND  predicted label == C  (false alarm)\
+  FN = true  label == C  AND  predicted label != C  (missed positive)\
+  TN = true  label != C  AND  predicted label != C  (correct negative)\
+  Double-check: TP + FP + FN + TN must equal total valid pairs for every class.\
+\
+Per-class breakdown  (F1 = 2\'b7TP / (2\'b7TP + FP + FN)):\
+  Class             TP    FP    FN    TN   Precision   Recall       F1             Sum check\
+  -----------------------------------------------------------------------------------------------\
+  Attack           348   130   136   386      0.7280   0.7190   0.7235  [2\'b7348/962]  [1000==1000 OK]\
+    Precision = TP/(TP+FP) = 348/(348+130) = 348/478 = 0.7280\
+    Recall    = TP/(TP+FN) = 348/(348+136) = 348/484 = 0.7190\
+  Support          386   136   130   348      0.7395   0.7481   0.7437  [2\'b7386/1038]  [1000==1000 OK]\
+    Precision = TP/(TP+FP) = 386/(386+136) = 386/522 = 0.7395\
+    Recall    = TP/(TP+FN) = 386/(386+130) = 386/516 = 0.7481\
+  => All class sums equal total valid pairs (1000). OK.\
+\
+Macro F1 = average of per-class F1 scores\
+  = (0.7235 + 0.7437) / 2\
+  = 0.7336\
+\
+Accuracy: 734/1000 correct = 0.7340  (73.4000%)\
+\
+============================================================\
+  Accuracy summary\
+============================================================\
+  Strategy B: 734/1000 correct (73.4000%)\
+\
+============================================================\
+  Done.\
+============================================================\
+\
+\
+\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f1\fs29\fsmilli14667 \cf0 \expnd0\expndtw0\kerning0
+Strategy B, few shot 20\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 \kerning1\expnd0\expndtw0 \
+\
+============================================================\
+  Strategy B\
+============================================================\
+\
+Total rows for strategy B: 1000\
+\
+Ground-truth label distribution:\
+  Attack      :  494\
+  Support     :  506\
+\
+Predicted label distribution:\
+  Attack      :  497\
+  Support     :  503\
+\
+Confusion matrix (rows = true label, cols = predicted label):\
+  Each cell [row R, col C] = number of samples whose TRUE label is R\
+  and whose PREDICTED label is C.\
+  Diagonal = correct predictions. Off-diagonal = errors.\
+                        Attack       Support\
+  Attack                   365           129\
+  Support                  132           374\
+\
+Definitions (per class C, treating C as the positive class):\
+  TP = true  label == C  AND  predicted label == C  (correct positive)\
+  FP = true  label != C  AND  predicted label == C  (false alarm)\
+  FN = true  label == C  AND  predicted label != C  (missed positive)\
+  TN = true  label != C  AND  predicted label != C  (correct negative)\
+  Double-check: TP + FP + FN + TN must equal total valid pairs for every class.\
+\
+Per-class breakdown  (F1 = 2\'b7TP / (2\'b7TP + FP + FN)):\
+  Class             TP    FP    FN    TN   Precision   Recall       F1             Sum check\
+  -----------------------------------------------------------------------------------------------\
+  Attack           365   132   129   374      0.7344   0.7389   0.7366  [2\'b7365/991]  [1000==1000 OK]\
+    Precision = TP/(TP+FP) = 365/(365+132) = 365/497 = 0.7344\
+    Recall    = TP/(TP+FN) = 365/(365+129) = 365/494 = 0.7389\
+  Support          374   129   132   365      0.7435   0.7391   0.7413  [2\'b7374/1009]  [1000==1000 OK]\
+    Precision = TP/(TP+FP) = 374/(374+129) = 374/503 = 0.7435\
+    Recall    = TP/(TP+FN) = 374/(374+132) = 374/506 = 0.7391\
+  => All class sums equal total valid pairs (1000). OK.\
+\
+Macro F1 = average of per-class F1 scores\
+  = (0.7366 + 0.7413) / 2\
+  = 0.7390\
+\
+Accuracy: 739/1000 correct = 0.7390  (73.9000%)\
+\
+============================================================\
+  Accuracy summary\
+============================================================\
+  Strategy B: 739/1000 correct (73.9000%)\
+\
+============================================================\
+  Done.\
+============================================================+\
+\
+\
+\
+\
+\pard\pardeftab720\partightenfactor0
+
+\f1\fs29\fsmilli14667 \cf0 \expnd0\expndtw0\kerning0
+NR_Webdataset\
+Strategy C, 0 shot\
+\
+\
+\
+============================================================\
+  Strategy C\
+============================================================\
+\
+Total rows for strategy C: 1000\
+\
+Ground-truth label distribution:\
+  Attack      :  319\
+  Support     :  327\
+  No Relation :  354\
+\
+Predicted label distribution:\
+  Attack      :  263\
+  Support     :  360\
+  No Relation :  377\
+\
+Confusion matrix (rows = true label, cols = predicted label):\
+  Each cell [row R, col C] = number of samples whose TRUE label is R\
+  and whose PREDICTED label is C.\
+  Diagonal = correct predictions. Off-diagonal = errors.\
+                        Attack       Support   No Relation\
+  Attack                   185            73            61\
+  Support                   42           228            57\
+  No Relation               36            59           259\
+\
+Definitions (per class C, treating C as the positive class):\
+  TP = true  label == C  AND  predicted label == C  (correct positive)\
+  FP = true  label != C  AND  predicted label == C  (false alarm)\
+  FN = true  label == C  AND  predicted label != C  (missed positive)\
+  TN = true  label != C  AND  predicted label != C  (correct negative)\
+  Double-check: TP + FP + FN + TN must equal total valid pairs for every class.\
+\
+Per-class breakdown  (F1 = 2\'b7TP / (2\'b7TP + FP + FN)):\
+  Class             TP    FP    FN    TN   Precision   Recall       F1             Sum check\
+  -----------------------------------------------------------------------------------------------\
+  Attack           185    78   134   603      0.7034   0.5799   0.6357  [2\'b7185/582]  [1000==1000 OK]\
+    Precision = TP/(TP+FP) = 185/(185+78) = 185/263 = 0.7034\
+    Recall    = TP/(TP+FN) = 185/(185+134) = 185/319 = 0.5799\
+  Support          228   132    99   541      0.6333   0.6972   0.6638  [2\'b7228/687]  [1000==1000 OK]\
+    Precision = TP/(TP+FP) = 228/(228+132) = 228/360 = 0.6333\
+    Recall    = TP/(TP+FN) = 228/(228+99) = 228/327 = 0.6972\
+  No Relation      259   118    95   528      0.6870   0.7316   0.7086  [2\'b7259/731]  [1000==1000 OK]\
+    Precision = TP/(TP+FP) = 259/(259+118) = 259/377 = 0.6870\
+    Recall    = TP/(TP+FN) = 259/(259+95) = 259/354 = 0.7316\
+  => All class sums equal total valid pairs (1000). OK.\
+\
+Macro F1 = average of per-class F1 scores\
+  = (0.6357 + 0.6638 + 0.7086) / 3\
+  = 0.6694\
+\
+Accuracy: 672/1000 correct = 0.6720  (67.2000%)\
+\
+============================================================\
+  Accuracy summary\
+============================================================\
+  Strategy C: 672/1000 correct (67.2000%)\
+\
+============================================================\
+  Done.\
+============================================================\
+\
+\
+\
+\
+\
+\pard\pardeftab720\partightenfactor0
+\cf0 Strategy C, few shot 20\
+\pard\pardeftab720\partightenfactor0
+\cf0 \
+\
+============================================================\
+  Strategy C\
+============================================================\
+\
+Total rows for strategy C: 1000\
+\
+Ground-truth label distribution:\
+  Attack      :  336\
+  Support     :  307\
+  No Relation :  357\
+\
+Predicted label distribution:\
+  Attack      :  265\
+  Support     :  330\
+  No Relation :  405\
+\
+Confusion matrix (rows = true label, cols = predicted label):\
+  Each cell [row R, col C] = number of samples whose TRUE label is R\
+  and whose PREDICTED label is C.\
+  Diagonal = correct predictions. Off-diagonal = errors.\
+                        Attack       Support   No Relation\
+  Attack                   199            87            50\
+  Support                   46           212            49\
+  No Relation               20            31           306\
+\
+Definitions (per class C, treating C as the positive class):\
+  TP = true  label == C  AND  predicted label == C  (correct positive)\
+  FP = true  label != C  AND  predicted label == C  (false alarm)\
+  FN = true  label == C  AND  predicted label != C  (missed positive)\
+  TN = true  label != C  AND  predicted label != C  (correct negative)\
+  Double-check: TP + FP + FN + TN must equal total valid pairs for every class.\
+\
+Per-class breakdown  (F1 = 2\'b7TP / (2\'b7TP + FP + FN)):\
+  Class             TP    FP    FN    TN   Precision   Recall       F1             Sum check\
+  -----------------------------------------------------------------------------------------------\
+  Attack           199    66   137   598      0.7509   0.5923   0.6622  [2\'b7199/601]  [1000==1000 OK]\
+    Precision = TP/(TP+FP) = 199/(199+66) = 199/265 = 0.7509\
+    Recall    = TP/(TP+FN) = 199/(199+137) = 199/336 = 0.5923\
+  Support          212   118    95   575      0.6424   0.6906   0.6656  [2\'b7212/637]  [1000==1000 OK]\
+    Precision = TP/(TP+FP) = 212/(212+118) = 212/330 = 0.6424\
+    Recall    = TP/(TP+FN) = 212/(212+95) = 212/307 = 0.6906\
+  No Relation      306    99    51   544      0.7556   0.8571   0.8031  [2\'b7306/762]  [1000==1000 OK]\
+    Precision = TP/(TP+FP) = 306/(306+99) = 306/405 = 0.7556\
+    Recall    = TP/(TP+FN) = 306/(306+51) = 306/357 = 0.8571\
+  => All class sums equal total valid pairs (1000). OK.\
+\
+Macro F1 = average of per-class F1 scores\
+  = (0.6622 + 0.6656 + 0.8031) / 3\
+  = 0.7103\
+\
+Accuracy: 717/1000 correct = 0.7170  (71.7000%)\
+\
+============================================================\
+  Accuracy summary\
+============================================================\
+  Strategy C: 717/1000 correct (71.7000%)\
+\
+============================================================\
+  Done.\
+============================================================\
+\
+\
+\
+\
+OpenAI_GPT5.5\
+\pard\pardeftab720\partightenfactor0
+\cf0 Webdataset:\
+Strategy B, 0 shot\
+\pard\pardeftab720\partightenfactor0
+\cf0 \
+\
+\
+}
