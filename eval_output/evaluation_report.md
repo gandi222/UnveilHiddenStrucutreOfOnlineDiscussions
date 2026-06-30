@@ -82,6 +82,19 @@ assume n = 1000 for every run. The true n is computed from prediction counts:
 |---|---|---|---|---|---|---|
 | C vs D (b10, 0-shot) | 0.6400 (1000) | 0.5940 (988) | +4.59 | +2.104 | 0.0354 | ✓ |
 
+### Group 5 — Cross-model comparison (matched b20 conditions)
+
+| Comparison | acc1 (n1) | acc2 (n2) | diff (pp) | z | p-value | Sig? |
+|---|---|---|---|---|---|---|
+| B 0-shot Web b20 | gemma4:latest vs claude-opus-4-8 | 0.6967 (900) | 0.7340 (1000) | -3.73 | -1.802 | 0.0715 |  |
+| B 0-shot Web b20 | gemma4:latest vs gpt-5.5 | 0.6967 (900) | 0.7900 (1000) | -9.33 | -4.665 | 0.0000 | ✓ |
+| B 0-shot Web b20 | claude-opus-4-8 vs gpt-5.5 | 0.7340 (1000) | 0.7900 (1000) | -5.60 | -2.940 | 0.0033 | ✓ |
+| B 20-shot Web b20 | claude-opus-4-8 vs gpt-5.5 | 0.7390 (1000) | 0.7780 (1000) | -3.90 | -2.038 | 0.0416 | ✓ |
+| C 0-shot NR_Web b20 | gemma4:latest vs claude-opus-4-8 | 0.6088 (799) | 0.6720 (1000) | -6.37 | -2.805 | 0.0050 | ✓ |
+| C 0-shot NR_Web b20 | gemma4:latest vs gpt-5.5 | 0.6088 (799) | 0.7020 (1000) | -9.37 | -4.171 | 0.0000 | ✓ |
+| C 0-shot NR_Web b20 | claude-opus-4-8 vs gpt-5.5 | 0.6720 (1000) | 0.7020 (1000) | -3.00 | -1.447 | 0.1480 |  |
+| C 20-shot NR_Web b20 | claude-opus-4-8 vs gpt-5.5 | 0.7170 (1000) | 0.7210 (1000) | -0.40 | -0.199 | 0.8423 |  |
+
 ## Plain-Language Summary
 
 **Statistically significant differences (α = 0.05):**
@@ -90,5 +103,11 @@ assume n = 1000 for every run. The true n is computed from prediction counts:
 - **A vs B (b5, 0-shot)**: A (0.640) vs B (0.696), z = -2.634, p = 0.0084, diff = -5.57 pp.
 - **B vs C (b5, 0-shot)**: B (0.696) vs C (0.624), z = +3.372, p = 0.0007, diff = +7.17 pp.
 - **C vs D (b10, 0-shot)**: C (0.640) vs D (0.594), z = +2.104, p = 0.0354, diff = +4.59 pp.
+- **B 0-shot Web b20 | gemma4:latest vs gpt-5.5**: gemma4:latest (0.697) vs gpt-5.5 (0.790), z = -4.665, p = 0.0000, diff = -9.33 pp.
+- **B 0-shot Web b20 | claude-opus-4-8 vs gpt-5.5**: claude-opus-4-8 (0.734) vs gpt-5.5 (0.790), z = -2.940, p = 0.0033, diff = -5.60 pp.
+- **B 20-shot Web b20 | claude-opus-4-8 vs gpt-5.5**: claude-opus-4-8 (0.739) vs gpt-5.5 (0.778), z = -2.038, p = 0.0416, diff = -3.90 pp.
+- **C 0-shot NR_Web b20 | gemma4:latest vs claude-opus-4-8**: gemma4:latest (0.609) vs claude-opus-4-8 (0.672), z = -2.805, p = 0.0050, diff = -6.37 pp.
+- **C 0-shot NR_Web b20 | gemma4:latest vs gpt-5.5**: gemma4:latest (0.609) vs gpt-5.5 (0.702), z = -4.171, p = 0.0000, diff = -9.37 pp.
+- **claude-opus-4-8 C 20-shot vs 0-shot (b20)**: 20-shot (0.717) vs 0-shot (0.672), z = +2.185, p = 0.0289, diff = +4.50 pp.
 
-Of 27 comparisons, **4** are significant at α = 0.05 and **23** are not. The significant findings are: strategy A at batch-5 is meaningfully worse than batch-20 (Group 2); across strategies, A underperforms B at batch-5 and B underperforms C at batch-5 (Group 3, noting the datasets differ); and C outperforms D at batch-10 (Group 4). Few-shot examples did not significantly improve accuracy for either A or C compared to zero-shot at batch-10. Most batch-size differences within strategy are not significant.
+Of 39 comparisons, **10** are significant at α = 0.05 and **29** are not. The significant findings are: strategy A at batch-5 is meaningfully worse than batch-20 (Group 2); across strategies, A underperforms B at batch-5 and B underperforms C at batch-5 (Group 3, noting the datasets differ); and C outperforms D at batch-10 (Group 4). Few-shot examples did not significantly improve accuracy for either A or C compared to zero-shot at batch-10. Most batch-size differences within strategy are not significant.

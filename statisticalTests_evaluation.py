@@ -65,10 +65,15 @@ def load_and_prepare(csv_path: str) -> pd.DataFrame:
     """
     df = pd.read_csv(csv_path)
 
-    # ds column: NR_ prefix → NR_Web, else Web
-    df["ds"] = df["dataset_file"].apply(
-        lambda p: "NR_Web" if str(p).startswith("NR_") else "Web"
-    )
+    def _ds_label(path: str) -> str:
+        p = str(path)
+        if p.startswith("NR_"):
+            return "NR_Web"
+        if "QBAF" in p:
+            return "QBAF"
+        return "Web"
+
+    df["ds"] = df["dataset_file"].apply(_ds_label)
 
     # n_eff: effective sample size per strategy
     def compute_n_eff(row):
@@ -127,7 +132,8 @@ def two_prop_ztest(x1: int, n1: int, x2: int, n2: int) -> dict:
 # ---------------------------------------------------------------------------
 
 def get(df: pd.DataFrame, strategy: str, few_shot_n: int,
-        ds: str, batch_size: int) -> Optional[pd.Series]:
+        ds: str, batch_size: int,
+        model: Optional[str] = None) -> Optional[pd.Series]:
     """Return the single matching row, or None with a warning."""
     mask = (
         (df["strategy"] == strategy)
@@ -135,6 +141,8 @@ def get(df: pd.DataFrame, strategy: str, few_shot_n: int,
         & (df["ds"] == ds)
         & (df["batch_size"] == batch_size)
     )
+    if model is not None:
+        mask = mask & (df["model"] == model)
     rows = df[mask]
     if len(rows) == 0:
         warnings.warn(
@@ -200,8 +208,8 @@ def run_accuracy_tests(df: pd.DataFrame) -> list[dict]:
         ("C", 20, "NR_Web"),
     ]
     for strat, fs, ds in g1_comparisons:
-        base = get(df, strat, 0, ds, 10)
-        shot = get(df, strat, fs, ds, 10)
+        base = get(df, strat, 0, ds, 10, model="gemma4:latest")
+        shot = get(df, strat, fs, ds, 10, model="gemma4:latest")
         rec = compare(
             "1_zeroshot_vs_fewshot",
             f"{strat} {fs}-shot vs 0-shot (b10)",
@@ -224,8 +232,8 @@ def run_accuracy_tests(df: pd.DataFrame) -> list[dict]:
         ("B", "Web",    5,  20),
     ]
     for strat, ds, b1, b2 in batch_comparisons:
-        r1 = get(df, strat, 0, ds, b1)
-        r2 = get(df, strat, 0, ds, b2)
+        r1 = get(df, strat, 0, ds, b1, model="gemma4:latest")
+        r2 = get(df, strat, 0, ds, b2, model="gemma4:latest")
         rec = compare(
             "2_batch_size",
             f"{strat} b{b1} vs b{b2} (0-shot)",
@@ -244,8 +252,8 @@ def run_accuracy_tests(df: pd.DataFrame) -> list[dict]:
         ("B", "Web", 5,  "C", "NR_Web"),
     ]
     for s1, ds1, b, s2, ds2 in cross_comparisons:
-        r1 = get(df, s1, 0, ds1, b)
-        r2 = get(df, s2, 0, ds2, b)
+        r1 = get(df, s1, 0, ds1, b, model="gemma4:latest")
+        r2 = get(df, s2, 0, ds2, b, model="gemma4:latest")
         rec = compare(
             "3_cross_strategy",
             f"{s1} vs {s2} (b{b}, 0-shot)",
@@ -261,8 +269,8 @@ def run_accuracy_tests(df: pd.DataFrame) -> list[dict]:
     a_shots = [7, 10, 14, 20]
     for i, fs1 in enumerate(a_shots):
         for fs2 in a_shots[i + 1:]:
-            r1 = get(df, "A", fs1, "Web", 10)
-            r2 = get(df, "A", fs2, "Web", 10)
+            r1 = get(df, "A", fs1, "Web", 10, model="gemma4:latest")
+            r2 = get(df, "A", fs2, "Web", 10, model="gemma4:latest")
             rec = compare(
                 "1b_fewshot_dose_response",
                 f"A {fs1}-shot vs {fs2}-shot (b10)",
@@ -273,8 +281,8 @@ def run_accuracy_tests(df: pd.DataFrame) -> list[dict]:
             if rec:
                 results.append(rec)
     # B: 10 vs 20
-    r_b10 = get(df, "B", 10, "Web", 10)
-    r_b20 = get(df, "B", 20, "Web", 10)
+    r_b10 = get(df, "B", 10, "Web", 10, model="gemma4:latest")
+    r_b20 = get(df, "B", 20, "Web", 10, model="gemma4:latest")
     rec = compare(
         "1b_fewshot_dose_response",
         "B 10-shot vs 20-shot (b10)",
@@ -285,8 +293,8 @@ def run_accuracy_tests(df: pd.DataFrame) -> list[dict]:
     if rec:
         results.append(rec)
     # C: 10 vs 20
-    r_c10 = get(df, "C", 10, "NR_Web", 10)
-    r_c20 = get(df, "C", 20, "NR_Web", 10)
+    r_c10 = get(df, "C", 10, "NR_Web", 10, model="gemma4:latest")
+    r_c20 = get(df, "C", 20, "NR_Web", 10, model="gemma4:latest")
     rec = compare(
         "1b_fewshot_dose_response",
         "C 10-shot vs 20-shot (b10)",
@@ -299,8 +307,8 @@ def run_accuracy_tests(df: pd.DataFrame) -> list[dict]:
 
     # ── Group 3b: A vs B at matched few-shot (batch 10, Web) ─────────────
     for fs in (10, 20):
-        r_a = get(df, "A", fs, "Web", 10)
-        r_b = get(df, "B", fs, "Web", 10)
+        r_a = get(df, "A", fs, "Web", 10, model="gemma4:latest")
+        r_b = get(df, "B", fs, "Web", 10, model="gemma4:latest")
         rec = compare(
             "3b_cross_strategy_fewshot",
             f"A vs B {fs}-shot (b10)",
@@ -312,8 +320,8 @@ def run_accuracy_tests(df: pd.DataFrame) -> list[dict]:
             results.append(rec)
 
     # ── Group 4: C vs D (zero-shot, batch 10) ────────────────────────────
-    r_c = get(df, "C", 0, "NR_Web", 10)
-    r_d = get(df, "D", 0, "NR_Web", 10)
+    r_c = get(df, "C", 0, "NR_Web", 10, model="gemma4:latest")
+    r_d = get(df, "D", 0, "NR_Web", 10, model="gemma4:latest")
     rec = compare(
         "4_C_vs_D",
         "C vs D (b10, 0-shot)",
@@ -323,6 +331,54 @@ def run_accuracy_tests(df: pd.DataFrame) -> list[dict]:
     )
     if rec:
         results.append(rec)
+
+    # ── Group 5: cross-model comparisons (matched b20 conditions) ────────
+    cross_model_conditions = [
+        ("B", 0,  "Web"),
+        ("B", 20, "Web"),
+        ("C", 0,  "NR_Web"),
+        ("C", 20, "NR_Web"),
+    ]
+    model_pairs = [
+        ("gemma4:latest",   "claude-opus-4-8"),
+        ("gemma4:latest",   "gpt-5.5"),
+        ("claude-opus-4-8", "gpt-5.5"),
+    ]
+    for strat, fs, ds in cross_model_conditions:
+        for m1, m2 in model_pairs:
+            r1 = get(df, strat, fs, ds, 20, model=m1)
+            r2 = get(df, strat, fs, ds, 20, model=m2)
+            shot_label = f"{fs}-shot" if fs > 0 else "0-shot"
+            rec = compare(
+                "5_cross_model",
+                f"{strat} {shot_label} {ds} b20 | {m1} vs {m2}",
+                strat, "model", ds,
+                m1, r1,
+                m2, r2,
+            )
+            if rec:
+                results.append(rec)
+
+    # ── Group 6: zero-shot vs few-shot for claude-opus-4-8 and gpt-5.5 ────
+    g6_configs = [
+        # (model, strategy, ds, few_shot_n, batch_size)
+        ("claude-opus-4-8", "B", "Web",    20, 20),
+        ("claude-opus-4-8", "C", "NR_Web", 20, 20),
+        ("gpt-5.5",         "B", "Web",    20, 20),
+        ("gpt-5.5",         "C", "NR_Web", 20, 20),
+    ]
+    for mdl, strat, ds, fs, bs in g6_configs:
+        base = get(df, strat, 0,  ds, bs, model=mdl)
+        shot = get(df, strat, fs, ds, bs, model=mdl)
+        rec = compare(
+            "6_zeroshot_vs_fewshot_new_models",
+            f"{mdl} {strat} {fs}-shot vs 0-shot (b{bs})",
+            strat, "few_shot", ds,
+            f"{fs}-shot", shot,
+            "0-shot", base,
+        )
+        if rec:
+            results.append(rec)
 
     return results
 
@@ -347,6 +403,8 @@ def print_accuracy_results(results: list[dict]) -> None:
         "3_cross_strategy":           "GROUP 3 — Cross-strategy (zero-shot, matched batch)",
         "3b_cross_strategy_fewshot":  "GROUP 3b — A vs B at matched few-shot (batch 10, WebDataset)",
         "4_C_vs_D":                   "GROUP 4 — C vs D (zero-shot, batch 10)",
+        "5_cross_model":                        "GROUP 5 — Cross-model comparison (matched b20 conditions)",
+        "6_zeroshot_vs_fewshot_new_models":     "GROUP 6 — Zero-shot vs Few-shot (claude-opus-4-8 and gpt-5.5, batch 20)",
     }
 
     print("\n" + "=" * 70)
@@ -387,6 +445,7 @@ def build_markdown_report(results: list[dict]) -> str:
         "3_cross_strategy":           "Group 3 — Cross-strategy (zero-shot, matched batch)",
         "3b_cross_strategy_fewshot":  "Group 3b — A vs B at matched few-shot (batch 10, WebDataset)",
         "4_C_vs_D":                   "Group 4 — C vs D (zero-shot, batch 10)",
+        "5_cross_model":              "Group 5 — Cross-model comparison (matched b20 conditions)",
     }
 
     md = REPORT_INTRO + "## Results\n\n"

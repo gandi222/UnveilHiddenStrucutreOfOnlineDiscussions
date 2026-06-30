@@ -11,7 +11,7 @@ from relevance_evaluation import print_relevance_results
 # ---------------------------------------------------------------------------
 # Configuration — edit these as needed
 # ---------------------------------------------------------------------------
-INPUT_FILE = "WebDataset/data-00000-of-00001.arrow"
+INPUT_FILE = "NR_WebDataset/data-00000-of-00001.arrow"
 OUTPUT_CSV = "results2.csv"
 
 # Provider selection: "ollama" | "anthropic" | "openai"
@@ -33,12 +33,12 @@ DELAY_SECONDS = 0
 MAX_RETRIES = 2
 
 # "A" — binary, "B" — two-class, "C" — three-class, "D" — three-class + relevance score (zero-shot if dataset has no relevance column), or all at once
-STRATEGIES_TO_RUN = ["B"]
+STRATEGIES_TO_RUN = ["C"]
 
 # Number of labeled examples injected into each prompt as few-shot context.
 # 0 = no few-shot (zero-shot). Sampled once per strategy, balanced across classes.
 # For strategy B only Attack/Support examples are eligible (not No Relation).
-FEW_SHOT_N = 0
+FEW_SHOT_N = 20
 TRACK_RESULTS = 1   # set to 0 to skip writing ResultOverview_allTests.csv
 # ---------------------------------------------------------------------------
 

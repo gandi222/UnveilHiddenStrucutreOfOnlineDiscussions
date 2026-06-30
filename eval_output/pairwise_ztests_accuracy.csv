@@ -26,3 +26,15 @@ group,comparison,strategy,factor,ds,group1,acc1,n1,group2,acc2,n2,diff_pp,z,p_va
 3b_cross_strategy_fewshot,A vs B 10-shot (b10),A+B,strategy,Web,A 10-shot,0.687,1000,B 10-shot,0.66,1000,2.7000000000000024,1.287473721590063,0.19792922318278605,False
 3b_cross_strategy_fewshot,A vs B 20-shot (b10),A+B,strategy,Web,A 20-shot,0.672,1000,B 20-shot,0.7,1000,-2.7999999999999914,-1.3490130521016697,0.17733277379511148,False
 4_C_vs_D,"C vs D (b10, 0-shot)",C+D,strategy,NR_Web,C,0.64,1000,D,0.594,988,4.587044534412954,2.103802705017002,0.03539566075463596,True
+5_cross_model,B 0-shot Web b20 | gemma4:latest vs claude-opus-4-8,B,model,Web,gemma4:latest,0.6966666666666667,900,claude-opus-4-8,0.734,1000,-3.733333333333333,-1.8024838324012038,0.07146931613861114,False
+5_cross_model,B 0-shot Web b20 | gemma4:latest vs gpt-5.5,B,model,Web,gemma4:latest,0.6966666666666667,900,gpt-5.5,0.79,1000,-9.333333333333337,-4.665265251410277,3.0821918640441436e-06,True
+5_cross_model,B 0-shot Web b20 | claude-opus-4-8 vs gpt-5.5,B,model,Web,claude-opus-4-8,0.734,1000,gpt-5.5,0.79,1000,-5.600000000000005,-2.9404044069260085,0.003277841257738022,True
+5_cross_model,B 20-shot Web b20 | claude-opus-4-8 vs gpt-5.5,B,model,Web,claude-opus-4-8,0.739,1000,gpt-5.5,0.778,1000,-3.9000000000000035,-2.0375733376018546,0.04159262072800132,True
+5_cross_model,C 0-shot NR_Web b20 | gemma4:latest vs claude-opus-4-8,C,model,NR_Web,gemma4:latest,0.60875,799,claude-opus-4-8,0.672,1000,-6.3739674593241595,-2.8048879638657342,0.005033407204625992,True
+5_cross_model,C 0-shot NR_Web b20 | gemma4:latest vs gpt-5.5,C,model,NR_Web,gemma4:latest,0.60875,799,gpt-5.5,0.702,1000,-9.37396745932415,-4.1714168151670235,3.0271156433509987e-05,True
+5_cross_model,C 0-shot NR_Web b20 | claude-opus-4-8 vs gpt-5.5,C,model,NR_Web,claude-opus-4-8,0.672,1000,gpt-5.5,0.702,1000,-2.9999999999999916,-1.4466241787597447,0.14800221053686885,False
+5_cross_model,C 20-shot NR_Web b20 | claude-opus-4-8 vs gpt-5.5,C,model,NR_Web,claude-opus-4-8,0.717,1000,gpt-5.5,0.721,1000,-0.40000000000000036,-0.19898822970928945,0.8422719518129451,False
+6_zeroshot_vs_fewshot_new_models,claude-opus-4-8 B 20-shot vs 0-shot (b20),B,few_shot,Web,20-shot,0.739,1000,0-shot,0.734,1000,0.5000000000000004,0.25379222962713976,0.7996560768113086,False
+6_zeroshot_vs_fewshot_new_models,claude-opus-4-8 C 20-shot vs 0-shot (b20),C,few_shot,NR_Web,20-shot,0.717,1000,0-shot,0.672,1000,4.499999999999993,2.1845187849655274,0.028924148466793306,True
+6_zeroshot_vs_fewshot_new_models,gpt-5.5 B 20-shot vs 0-shot (b20),B,few_shot,Web,20-shot,0.778,1000,0-shot,0.79,1000,-1.200000000000001,-0.6520506636966269,0.5143684895718259,False
+6_zeroshot_vs_fewshot_new_models,gpt-5.5 C 20-shot vs 0-shot (b20),C,few_shot,NR_Web,20-shot,0.721,1000,0-shot,0.702,1000,1.9000000000000017,0.9377309326029988,0.34838270312089914,False
